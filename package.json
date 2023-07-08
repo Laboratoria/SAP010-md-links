@@ -10,11 +10,26 @@
     "commit": "c17498042fc79734cec390e6314cbe810e95bf4c"
   },
   "dependencies": {
+    "chalk": "^5.3.0",
     "commander": "^11.0.0",
+    "cross-fetch": "^4.0.0",
     "fs": "^0.0.1-security",
     "node-fetch": "^2.6.7"
   },
   "bin": {
     "mdlinks": "mdlinks.js"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.6.4",
+    "@babel/core": "^7.22.8",
+    "@babel/plugin-transform-classes": "^7.22.6",
+    "@babel/plugin-transform-modules-commonjs": "^7.22.5",
+    "@babel/preset-env": "^7.22.7",
+    "babel-core": "^7.0.0-bridge.0",
+    "babel-jest": "^18.0.0",
+    "jest": "^25.0.0"
+  },
+  "scripts": {
+    "test": "jest --coverage"
   }
 }
