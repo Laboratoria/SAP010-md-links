@@ -1,29 +1,57 @@
 import mdlinks from '../src/lib/index.js';
 import path from 'path';
+import fetch from 'cross-fetch';
+
+jest.mock('cross-fetch', () => jest.fn());
 
 describe('mdlinks', () => {
-  it('Deve retornar os links de um arquivo Markdown', () => {
-    const filePath = 'src/pag/teste.md';
-    return mdlinks(filePath).then(links => {
-      expect(links[0]).toEqual(
-        { text: 'Markdown', href: 'https://pt.wikipedia.n', file: 'teste.md' },
+  let mockFetch;
+
+  beforeEach(() => {
+    mockFetch = jest.fn();
+    fetch.mockImplementation(mockFetch);
+  });
+
+  it('Deve extrair o link válido Markdown', () => {
+    const filePath = 'src/pag/README.md';
+
+    // Configurando o valor de retorno do mock para o teste
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      ok: true
+    });
+
+    return mdlinks(filePath).then(result => {
+      expect(result.links[0]).toEqual(
+        { text: 'Markdown', href: 'https://pt.wikipedia.org/wiki/Markdown', file: 'README.md' }
       );
     });
   });
 
-  it('Deve retornar o arquivo "teste.md"', () => {
-    const filePath = 'src/pag/teste.md';
-    return mdlinks(filePath).then((links) => {
-      expect(links[0].file).toBe(path.basename(filePath));
+  describe('mdlinks', () => {
+    it('Deve retornar o nome do arquivo Markdown', () => {
+      const file = 'src/pag/README.md';
+
+      // Configurando o valor de retorno do mock para o teste
+      mockFetch.mockResolvedValueOnce({
+        status: 200,
+        ok: true
+      });
+
+      return mdlinks(file).then(result => {
+        expect(result.links[0].file).toBe(path.basename(file));
+      });
     });
   });
-  
-  it('Deve retornar um array vazio para um arquivo que não seja Markdown', () => {
-    const filePath = 'src/pag/arquivo.txt';
-    return mdlinks(filePath).then(links => {
-      expect(links).toEqual([]);
+
+  it('Deve retornar uma mensagem informando que o arquivo não é um Markdown', () => {
+    const file = 'teste.txt';
+
+    // Configurando o valor de retorno do mock para o teste
+    mockFetch.mockRejectedValueOnce(new Error(`O ${file} não é um arquivo Markdown`));
+
+    return mdlinks(file).catch(error => {
+      expect(error.message).toEqual(`O ${file} não é um arquivo Markdown`);
     });
   });
 });
-
-

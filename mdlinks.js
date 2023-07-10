@@ -27,7 +27,7 @@ program
             console.log(`text: ${link.text}`);
             console.log(`file: ${link.file}`);
             console.log((`status: ${link.ok}`));
-            console.log('----------------------------');
+            console.log('***********');
           });
         } else {
           links.forEach((link) => {
