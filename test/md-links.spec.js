@@ -1,4 +1,4 @@
-const mdlinks = require ('../index.js') ;
+const {mdlinks} = require ('../index.js') ;
 const  path = require ('path');
 const  fetch = require ('cross-fetch');
 
@@ -13,9 +13,8 @@ describe('mdlinks', () => {
   });
 
   it('Deve extrair o link válido Markdown', () => {
-    const filePath = 'src/pag/README.md';
-
-    // Configurando o valor de retorno do mock para o teste
+    const filePath = './README.md';
+    
     mockFetch.mockResolvedValueOnce({
       status: 200,
       ok: true
@@ -30,9 +29,8 @@ describe('mdlinks', () => {
 
   describe('mdlinks', () => {
     it('Deve retornar o nome do arquivo Markdown', () => {
-      const file = 'src/pag/README.md';
+      const file = './pag/teste.md';
 
-      // Configurando o valor de retorno do mock para o teste
       mockFetch.mockResolvedValueOnce({
         status: 200,
         ok: true
@@ -47,7 +45,6 @@ describe('mdlinks', () => {
   it('Deve retornar uma mensagem informando que o arquivo não é um Markdown', () => {
     const file = 'teste.txt';
 
-    // Configurando o valor de retorno do mock para o teste
     mockFetch.mockRejectedValueOnce(new Error(`O ${file} não é um arquivo Markdown`));
 
     return mdlinks(file).catch(error => {
