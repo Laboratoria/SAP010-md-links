@@ -1,6 +1,6 @@
-import mdlinks from '../src/lib/index.js';
-import path from 'path';
-import fetch from 'cross-fetch';
+const mdlinks = require ('../index.js') ;
+const  path = require ('path');
+const  fetch = require ('cross-fetch');
 
 jest.mock('cross-fetch', () => jest.fn());
 
