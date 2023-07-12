@@ -18,15 +18,15 @@ program
           return validateLinks(links)
             .then((validatedLinks) => {
               const statistics = statsLinks(validatedLinks)
-              console.log(`Total de link: ${statistics.total}`)
-              console.log(`Links únicos: ${statistics.unique}`)
-              console.log(`Links inválidos: ${statistics.broken}`)
+              console.log(`Links total: ${statistics.total}`)
+              console.log(`Unique links: ${statistics.unique}`)
+              console.log(`Broken links: ${statistics.broken}`)
               console.log('-------------------------------')
             })
         } else if (options.validate) {
           links.forEach((link) => {
             console.log(`href: ${link.href}`)
-            console.log(`Texto: ${link.text}`)
+            console.log(`Text: ${link.text}`)
             console.log(`Status: ${link.ok}`)
             console.log(`File: ${link.file}`)
             console.log('-------------------------------')
@@ -34,11 +34,16 @@ program
         } else if (options.stats) {
           /* return statsLinks(links) */
           const statistics = statsLinks(links)
-          console.log(`Total de links: ${statistics.total}`)
-          console.log(`Links únicos: ${statistics.unique}`)
+          console.log(`Links total: ${statistics.total}`)
+          console.log(`Unique links: ${statistics.unique}`)
           console.log('-------------------------------')
         } else {
-          console.log('Links encontrados:', links)
+          links.forEach((link) => {
+            console.log(`href: ${link.href}`)
+            console.log(`Text: ${link.text}`)
+            console.log(`File: ${link.file}`)
+            console.log('-------------------------------')
+          })
         }
       })
       .catch((error) => {

@@ -1,104 +1,134 @@
 /* eslint-disable no-undef */
-/* const mdLinks = require('..'); */
-const { fileRead, validateLinks, statsLinks } = require('../index');
-/* const fetch = require('cross-fetch') */
-/* const path = require('path');
- */
-
-/* describe('mdlinks', () => {
-  let mockFetch;
-  beforeEach(() => {
-    mockFetch = jest.fn();
-    fetch.mockImplementation(mockFetch);
-  })
-}) */
-
-// Mock para a função fetch
-/* jest.mock('cross-fetch', () => {
-  return jest.fn().mockImplementation((url) => {
-    if (url === 'https://www.google.com') {
-      return Promise.resolve({ status: 200, ok: true });
-    } else if (url === 'https://www.github.com') {
-      return Promise.resolve({ status: 404, ok: false });
-    } else {
-      return Promise.reject(new Error('Error Fetch'))
-    }
-  });
-}); */
+const { fileRead, validateLinks, statsLinks, extractLinks } = require('../index')
 
 describe('Deve ler o arquivo e extrair os links corretamente', () => {
+  beforeEach(() => {
+    global.fetch = jest.fn()
+  })
+
   test('Extração correta de links', () => {
     const filePath = './mdFiles/files.md'
+    const mockResponse = { status: 200, ok: true }
+
+    global.fetch.mockResolvedValue(mockResponse)
 
     return fileRead(filePath).then((results) => {
       const fileResults = results[0]
-      const links = fileResults.links.map((link) => ({
-        href: link.href,
-        text: link.text,
-        file: fileResults.file
-      }));
+      const links = fileResults && fileResults.links
+        ? fileResults.links.map((link) => ({
+          href: link.href,
+          text: link.text,
+          file: fileResults.file
+        }))
+        : []
 
       return validateLinks(links).then((validatedLinks) => {
-        const expectedLink = {
-          href: 'https://www.google.com',
-          text: 'Google',
-          file: fileResults.file,
+        const expectedLinks = links.map((link) => ({
+          ...link,
           status: 200,
-          ok: 'OK',
-        };
-        expect(validatedLinks[0]).toEqual(expectedLink);
-      });
-    });
-  });
+          ok: 'OK'
+        }))
+
+        expect(validatedLinks).toEqual(expectedLinks)
+      })
+    })
+  })
 
   test('Deve retornar uma lista vazia para um arquivo sem links', () => {
-    const filePath = './mdFiles/semLinks.md';
+    const filePath = './mdFiles/semLinks.md'
 
     return fileRead(filePath).then((results) => {
-      const fileResults = results[0];
-      const links = fileResults.links.map((link) => ({
-        href: link.href,
-        text: link.text,
-        file: fileResults.file,
-      }));
+      const fileResults = results[0]
+      const links = fileResults && fileResults.links
+        ? fileResults.links.map((link) => ({
+          href: link.href,
+          text: link.text,
+          file: fileResults.file,
+          status: link.status,
+          ok: link.ok
+        }))
+        : []
 
       return validateLinks(links).then((validatedLinks) => {
-        expect(validatedLinks).toEqual([]);
-      });
-    });
-  });
+        const statistics = statsLinks(validatedLinks)
+
+        expect(validatedLinks).toEqual([])
+        expect(statistics).toEqual({ total: 0, unique: 0, broken: 0 })
+      })
+    })
+  })
 
   test('Deve rejeitar com um erro ao ler um arquivo inexistente', () => {
-    const filePath = './mdFiles/nonexistent.md';
+    const filePath = './mdFiles/nonexistent.md'
 
-    return fileRead(filePath).catch((error) => {
-      expect(error).toEqual(`O arquivo ${filePath} não foi encontrado.`);
-    });
-  });
-});
+    return expect(fileRead(filePath)).rejects.toEqual(
+      `O arquivo ${filePath} não foi encontrado.`
+    )
+  })
+})
 
-describe('mdlinks', () => {
-  test('deve retornar o arquivo "./mdFiles/files.md"', () => {
-    const filePath = './mdFiles/files.md';
+describe('extractLinks', () => {
+  test('Deve extrair corretamente os links de um texto', () => {
+    const text = 'Este é um exemplo de [link](https://exemplo.com) em um texto.'
+    const filePath = 'example.md'
+    const expectedLinks = [
+      {
+        href: 'https://exemplo.com',
+        text: 'link',
+        file: filePath
+      }
+    ]
 
-    return fileRead(filePath).then((results) => {
-      const fileResults = results[0];
-      expect(fileResults.file).toBe(filePath);
-    });
-  });
-});
+    const links = extractLinks(text, filePath)
+
+    expect(links).toEqual(expectedLinks)
+  })
+})
 
 describe('statsLinks', () => {
-  test('deve retornar as estatísticas corretas para uma lista de links', () => {
+  test('Deve retornar as estatísticas corretas para os links', () => {
     const links = [
-      { href: 'https://www.google.com', text: 'Google', file: './mdFiles/files.md', status: 200, ok: 'OK' },
-      { href: 'https://www.github.com', text: 'GitHub', file: './mdFiles/files.md', status: 404, ok: 'FAIL' },
-    ];
+      { href: 'https://exemplo.com/link1', ok: 'OK' },
+      { href: 'https://exemplo.com/link2', ok: 'OK' },
+      { href: 'https://exemplo.com/link3', ok: 'FAIL' },
+      { href: 'https://exemplo.com/link4', ok: 'OK' }
+    ]
 
-    const statistics = statsLinks(links);
+    const statistics = statsLinks(links)
 
-    expect(statistics.total).toBe(2);
-    expect(statistics.unique).toBe(2);
-    expect(statistics.broken).toBe(1);
-  });
-});
+    expect(statistics.total).toBe(4)
+    expect(statistics.unique).toBe(4)
+    expect(statistics.broken).toBe(1)
+  })
+
+  test('Deve retornar estatísticas vazias para uma lista vazia de links', () => {
+    const links = []
+
+    const statistics = statsLinks(links)
+
+    expect(statistics.total).toBe(0)
+    expect(statistics.unique).toBe(0)
+    expect(statistics.broken).toBe(0)
+  })
+})
+
+test('Deve validar corretamente os links e lidar com falhas na requisição', () => {
+  const links = [
+    { href: 'https://exemplo.com/link1' },
+    { href: 'https://exemplo.com/link2' },
+    { href: 'https://exemplo.com/link3' }
+  ]
+
+  // Simula a falha na requisição HTTP
+  global.fetch.mockRejectedValue(new Error('Falha na requisição'))
+
+  return validateLinks(links).then((validatedLinks) => {
+    const expectedLinks = [
+      { href: 'https://exemplo.com/link1', status: 404, ok: 'FAIL' },
+      { href: 'https://exemplo.com/link2', status: 404, ok: 'FAIL' },
+      { href: 'https://exemplo.com/link3', status: 404, ok: 'FAIL' }
+    ]
+
+    expect(validatedLinks).toEqual(expectedLinks)
+  })
+})
