@@ -1,6 +1,6 @@
 const fs = require('fs')
 
-let filePath = '/home/cristyna/laboratoria/SAP010-md-links/src/test.txt'
+let filePath = process.argv[2]
 
 fs.readFile(filePath, (err, fileContent) => {
     if (err) {
