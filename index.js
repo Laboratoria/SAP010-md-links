@@ -19,7 +19,7 @@ function extractLinks (text, filePath) {
 // Função para validar os links
 function validateLinks (links) {
   const promises = links.map((link) => {
-    return fetch(link.href)
+    return fetch(link.href) // percorrer cada link e realizar uma requisição HTTP(fetch)
       .then((response) => {
         link.status = response.status
         link.ok = response.ok ? 'OK' : 'FAIL'
@@ -33,6 +33,7 @@ function validateLinks (links) {
   })
 
   return Promise.all(promises)
+  // As chamadas a fetch são encapsuladas em Promises e agrupadas usando Promise.all para obter um array de promessas que representa o resultado da validação de todos os links.
 }
 
 // Função para as estatísticas dos links
@@ -49,21 +50,21 @@ function statsLinks (links) {
 
 // Função para a leitura recursiva de diretórios
 function readRecursion (dirPath, fileCallback) {
-  fs.readdir(dirPath, (err, files) => {
+  fs.readdir(dirPath, (err, files) => { // A função readdir do módulo fs é usada para listar os arquivos dentro do diretório
     if (err) {
       throw err
     }
 
     files.forEach((file) => {
-      const filePath = `${dirPath}/${file}`
-
-      fs.stat(filePath, (err, stats) => {
+      const filePath = `${dirPath}/${file}` // diretório / e arquivo encontrado no diretório
+      //  A função stat é usada para obter informações sobre o arquivo
+      fs.stat(filePath, (err, stats) => { // stats: É um objeto que contém as informações do arquivo ou diretório, como tamanho, etc
         if (err) {
           throw err
         }
 
         if (stats.isDirectory()) {
-          // Caso seja um diretório, chamama a função recursivamente
+          // Caso seja um diretório, chama a função recursivamente
           readRecursion(filePath, fileCallback)
         } else if (stats.isFile() && file.endsWith('.md')) {
           // Caso seja um arquivo Markdown, chamamos a função de callback
@@ -74,10 +75,10 @@ function readRecursion (dirPath, fileCallback) {
   })
 }
 
-// Função principal do projeto - ler arquivo(s) e extrair os links
+// FUNÇÃO PRINCIPAL DO PROJETO - ler arquivo(s) e extrair os links
 function fileRead (filePath) {
   return new Promise((resolve, reject) => {
-    fs.stat(filePath, (err, stats) => {
+    fs.stat(filePath, (err, stats) => { // para verificar se o caminho aponta para um diretório ou arquivo válido
       if (err) {
         // ENOENT - um arquivo ou diretório que não existe no sistema de arquivos.
         if (err.code === 'ENOENT') {
@@ -87,21 +88,24 @@ function fileRead (filePath) {
           reject(err)
         }
       } else {
-        if (stats.isDirectory()) {
-          const markdownFiles = []
-          readRecursion(filePath, (file) => {
+        if (stats.isDirectory()) { // se o caminho é um diretorio
+          const markdownFiles = [] // criar array p/ armazenar arquivos MD
+          readRecursion(filePath, (file) => { // Chama a função de leitura recursiva de diretórios para buscar os arquivos MD
             if (file.endsWith('.md')) {
-              markdownFiles.push(file)
+              markdownFiles.push(file) // add no array
             }
           })
-
+          // Cria um array de promessas para ler cada arquivo MD
           const promises = markdownFiles.map((file) => {
             return fs.promises
               .readFile(file, 'utf8')
               .then((data) => {
-                const links = extractLinks(data, file)
+                const links = extractLinks(data, file) // Extrai os links do arquivo
+                // Valida os links
                 return validateLinks(links).then((validatedLinks) => {
+                  // Calcula as estatísticas dos links
                   const statistics = statsLinks(validatedLinks)
+                  // Retorna um objeto contendo o arquivo, os links validados e as estatísticas
                   return { file, links: validatedLinks, stats: statistics }
                 })
               })
@@ -109,24 +113,24 @@ function fileRead (filePath) {
                 throw error
               })
           })
-
+          // Executa todas as promessas em paralelo usando Promise.all
           Promise.all(promises)
             .then((results) => {
-              resolve(results)
+              resolve(results) // Resolve a promessa com o resultado das leituras de arquivo
             })
             .catch((error) => {
-              reject(error)
+              reject(error) // rejeita se tiver algum erro de leitura
             })
-        } else if (stats.isFile() && filePath.endsWith('.md')) {
-          fs.readFile(filePath, 'utf8', (err, data) => {
+        } else if (stats.isFile() && filePath.endsWith('.md')) { // Se o caminho é um arquivo Markdown
+          fs.readFile(filePath, 'utf8', (err, data) => { // Lê o conteúdo do arquivo
             if (err) {
               reject(err)
             } else {
               const links = extractLinks(data, filePath)
               validateLinks(links)
                 .then((validatedLinks) => {
-                  const statistics = statsLinks(validatedLinks)
-                  resolve({ file: filePath, links: validatedLinks, stats: statistics })
+                  const statistics = statsLinks(validatedLinks) // Calcula as estatísticas dos links
+                  resolve({ file: filePath, links: validatedLinks, stats: statistics }) // Resolve a promessa com o objeto contendo o arquivo, os links validados e as estatísticas
                 })
                 .catch((error) => {
                   reject(error)
