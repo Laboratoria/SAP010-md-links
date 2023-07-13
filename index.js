@@ -15,11 +15,29 @@ function extractLinks (text, filePath) {
 
   return links
 }
-
-// Função para validar os links
 function validateLinks (links) {
   const promises = links.map((link) => {
     return fetch(link.href) // percorrer cada link e realizar uma requisição HTTP(fetch)
+      .then((response) => {
+        link.status = response.status
+        link.ok = response.ok ? 'OK' : 'FAIL'
+        return link
+      })
+      .catch((error) => {
+        link.status = 404
+        link.ok = 'FAIL'
+        throw error // Rejeita a promessa com o erro original
+      })
+  })
+
+  return Promise.all(promises)
+  // As chamadas a fetch são encapsuladas em Promises e agrupadas usando Promise.all para obter um array de promessas que representa o resultado da validação de todos os links.
+}
+
+/* // Função para validar os links
+function validateLinks (links) {
+  const promises = links.map((link) => {
+    return fetch(link.href)
       .then((response) => {
         link.status = response.status
         link.ok = response.ok ? 'OK' : 'FAIL'
@@ -33,8 +51,7 @@ function validateLinks (links) {
   })
 
   return Promise.all(promises)
-  // As chamadas a fetch são encapsuladas em Promises e agrupadas usando Promise.all para obter um array de promessas que representa o resultado da validação de todos os links.
-}
+} */
 
 // Função para as estatísticas dos links
 function statsLinks (links) {
@@ -84,8 +101,6 @@ function fileRead (filePath) {
         if (err.code === 'ENOENT') {
           // eslint-disable-next-line prefer-promise-reject-errors
           reject(`O arquivo ${filePath} não foi encontrado.`)
-        } else {
-          reject(err)
         }
       } else {
         if (stats.isDirectory()) { // se o caminho é um diretorio
