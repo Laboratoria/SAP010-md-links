@@ -1,153 +1,142 @@
 /* eslint-disable no-undef */
-/* const { fileRead } = require('../index.js') */
-
-// Mock da função fileRead
-/* jest.mock('../index.js', () => ({
-  fileRead: jest.fn()
-}))
+/* const { fileRead, validateLinks, statsLinks, extractLinks } = require('../index')
 
 describe('Deve ler o arquivo e extrair os links corretamente', () => {
+  beforeEach(() => {
+    global.fetch = jest.fn()
+  })
+
   test('Extração correta de links', () => {
-    const filePath = './files.md'
-    const expectedLinks = [
-      {
-        href: 'https://www.google.com',
-        text: 'Google',
-        file: filePath
-      },
-      {
-        href: 'https://curriculum.laboratoria.la/pt/topics/javascript/04-arrays',
-        text: 'Arranjos',
-        file: filePath
-      },
-      {
-        href: 'https://developer.mozilla.org//pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Array/',
-        text: 'Array - MDN',
-        file: filePath
-      }
-    ]
+    const filePath = './mdFiles/files.md'
+    const mockResponse = { status: 200, ok: true }
 
-    // Definindo o comportamento do mock
-    fileRead.mockResolvedValue(expectedLinks)
+    global.fetch.mockResolvedValue(mockResponse)
 
-    return fileRead(filePath).then((links) => {
-      expect(links[0]).toEqual(expectedLinks[0])
-      expect(links[1]).toEqual(expectedLinks[1])
-      expect(links[2]).toEqual(expectedLinks[2])
+    return fileRead(filePath).then((results) => {
+      const fileResults = results[0]
+      const links = fileResults && fileResults.links
+        ? fileResults.links.map((link) => ({
+          href: link.href,
+          text: link.text,
+          file: fileResults.file
+        }))
+        : []
+
+      return validateLinks(links).then((validatedLinks) => {
+        const expectedLinks = links.map((link) => ({
+          ...link,
+          status: 200,
+          ok: 'OK'
+        }))
+
+        expect(validatedLinks).toEqual(expectedLinks)
+      })
     })
   })
 
   test('Deve retornar uma lista vazia para um arquivo sem links', () => {
-    const filePath = './semLinks.md'
+    const filePath = './mdFiles/semLinks.md'
 
-    // Definindo o comportamento do mock
-    fileRead.mockResolvedValue([])
+    return fileRead(filePath).then((results) => {
+      const fileResults = results[0]
+      const links = fileResults && fileResults.links
+        ? fileResults.links.map((link) => ({
+          href: link.href,
+          text: link.text,
+          file: fileResults.file,
+          status: link.status,
+          ok: link.ok
+        }))
+        : []
 
-    return fileRead(filePath).then((links) => {
-      expect(links).toEqual([])
-    }).catch((error) => {
-      expect(error).toEqual(`O arquivo ${filePath} não contém links.`);
+      return validateLinks(links).then((validatedLinks) => {
+        const statistics = statsLinks(validatedLinks)
+
+        expect(validatedLinks).toEqual([])
+        expect(statistics).toEqual({ total: 0, unique: 0, broken: 0 })
+      })
     })
   })
 
   test('Deve rejeitar com um erro ao ler um arquivo inexistente', () => {
-    const filePath = './arquivo_inexistente.md'
+    const filePath = './mdFiles/nonexistent.md'
 
-    // Definindo o comportamento do mock
-    fileRead.mockRejectedValue(`O arquivo ${filePath} não foi encontrado.`);
-
-    return fileRead(filePath).catch((error) => {
-      expect(error).toEqual(`O arquivo ${filePath} não foi encontrado.`);
-    })
+    return expect(fileRead(filePath)).rejects.toEqual(
+      `O arquivo ${filePath} não foi encontrado.`
+    )
   })
 })
 
-describe('mdlinks', () => {
-  test('deve retornar o arquivo "./files.md"', () => {
-    const file = './files.md'
-    const filePath = './files.md'
+describe('extractLinks', () => {
+  test('Deve extrair corretamente os links de um texto', () => {
+    const text = 'Este é um exemplo de [link](https://exemplo.com) em um texto.'
+    const filePath = 'example.md'
     const expectedLinks = [
       {
-        href: 'https://www.google.com',
-        text: 'Google',
-        file: file
-      },
-      {
-        href: 'https://curriculum.laboratoria.la/pt/topics/javascript/04-arrays',
-        text: 'Arranjos',
-        file: file
-      },
-      {
-        href: 'https://developer.mozilla.org//pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Array/',
-        text: 'Array - MDN',
-        file: file
+        href: 'https://exemplo.com',
+        text: 'link',
+        file: filePath
       }
     ]
 
-    // Definindo o comportamento do mock
-    fileRead.mockResolvedValue(expectedLinks)
+    const links = extractLinks(text, filePath)
 
-    return fileRead(filePath).then((result) => {
-      result.forEach((links) => {
-        expect(links.file).toBe(file)
-      })
-    })
+    expect(links).toEqual(expectedLinks)
   })
+})
+
+describe('statsLinks', () => {
+  test('Deve retornar as estatísticas corretas para os links', () => {
+    const links = [
+      { href: 'https://exemplo.com/link1', ok: 'OK' },
+      { href: 'https://exemplo.com/link2', ok: 'OK' },
+      { href: 'https://exemplo.com/link3', ok: 'FAIL' },
+      { href: 'https://exemplo.com/link4', ok: 'OK' }
+    ]
+
+    const statistics = statsLinks(links)
+
+    expect(statistics.total).toBe(4)
+    expect(statistics.unique).toBe(4)
+    expect(statistics.broken).toBe(1)
+  })
+
+  test('Deve retornar estatísticas vazias para uma lista vazia de links', () => {
+    const links = []
+
+    const statistics = statsLinks(links)
+
+    expect(statistics.total).toBe(0)
+    expect(statistics.unique).toBe(0)
+    expect(statistics.broken).toBe(0)
+  })
+})
+
+test('Deve validar corretamente os links e lidar com falhas na requisição', () => {
+  const links = [
+    { href: 'https://exemplo.com/link1' },
+    { href: 'https://exemplo.com/link2' },
+    { href: 'https://exemplo.com/link3' }
+  ]
+
+  // Simula a falha na requisição HTTP
+  global.fetch.mockRejectedValue(new Error('Falha na requisição'))
+
+  return validateLinks(links).then((validatedLinks) => {
+    const expectedLinks = [
+      { href: 'https://exemplo.com/link1', status: 404, ok: 'FAIL' },
+      { href: 'https://exemplo.com/link2', status: 404, ok: 'FAIL' },
+      { href: 'https://exemplo.com/link3', status: 404, ok: 'FAIL' }
+    ]
+
+    expect(validatedLinks).toEqual(expectedLinks)
+  })
+})
+test('Deve rejeitar com um erro ao ler um arquivo não Markdown', () => {
+  const filePath = './mdFiles/text.txt'
+
+  return expect(fileRead(filePath)).rejects.toEqual(
+    `O caminho ${filePath} não é um arquivo Markdown válido.`
+  )
 })
  */
-
-/*
-const { fileRead } = require('../index.js')
-
-describe('Deve ler o arquivo e extrair os links corretamente', () => {
-  test('Extração correta de links', () => {
-    const filePath = './files.md'
-
-    return fileRead(filePath).then(links => {
-      expect(links[0]).toEqual({
-        href: 'https://www.google.com',
-        text: 'Google',
-        file: filePath
-      })
-      expect(links[1]).toEqual({
-        href: 'https://curriculum.laboratoria.la/pt/topics/javascript/04-arrays',
-        text: 'Arranjos',
-        file: filePath
-      })
-      expect(links[2]).toEqual({
-        href: 'https://developer.mozilla.org//pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Array/',
-        text: 'Array - MDN',
-        file: filePath
-      })
-    })
-  })
-  test('Deve retornar uma lista vazia para um arquivo sem links', () => {
-    const filePath = './semLinks.md'
-
-    return fileRead(filePath).then((links) => {
-      expect(links).toEqual([])
-    }).catch((error) => {
-      expect(error).toEqual(`O arquivo ${filePath} não contém links.`)
-    })
-  })
-
-  test('Deve rejeitar com um erro ao ler um arquivo inexistente', () => {
-    const filePath = './arquivo_inexistente.md'
-
-    return fileRead(filePath).catch((error) => {
-      expect(error).toEqual(`O arquivo ${filePath} não foi encontrado.`)
-    })
-  })
-})
-
-describe('mdlinks', () => {
-  test('deve retornar o arquivo "./files.md"', () => {
-    const file = './files.md'
-    const filePath = './files.md'
-    return fileRead(filePath).then((result) => {
-      result.forEach((links) => {
-        expect(links.file).toBe(file)
-      })
-    })
-  })
-}) */

@@ -1,12 +1,69 @@
 /* eslint-disable no-undef */
-const { fileRead, validateLinks, statsLinks, extractLinks } = require('../index')
+/* const fs = require('fs') */
+const {
+  fileRead,
+  validateLinks,
+  statsLinks,
+  extractLinks
+} = require('../index')
 
-describe('Deve ler o arquivo e extrair os links corretamente', () => {
+describe('Funções de Validação de Links', () => {
   beforeEach(() => {
     global.fetch = jest.fn()
   })
 
-  test('Extração correta de links', () => {
+  test('Deve validar corretamente os links e lidar com falhas na requisição', () => {
+    const links = [
+      { href: 'https://example.com/link1' },
+      { href: 'https://example.com/link2' }
+    ]
+
+    const mockResponse = { status: 200, ok: true }
+    global.fetch.mockResolvedValue(mockResponse)
+
+    return validateLinks(links).then((validatedLinks) => {
+      const expectedLinks = [
+        {
+          href: 'https://example.com/link1',
+          status: 200,
+          ok: 'OK'
+        },
+        {
+          href: 'https://example.com/link2',
+          status: 200,
+          ok: 'OK'
+        }
+      ]
+
+      expect(validatedLinks).toEqual(expectedLinks)
+    })
+  })
+
+  test('Deve rejeitar com um erro ao validar os links', () => {
+    const links = [
+      { href: 'https://example.com/link1' },
+      { href: 'https://example.com/link2' }
+    ]
+
+    // Simula uma falha na requisição HTTP
+    global.fetch.mockRejectedValue(new Error('Falha na requisição'))
+
+    return expect(validateLinks(links)).rejects.toThrowError(
+      'Falha na requisição'
+    )
+  })
+})
+
+describe('Função fileRead', () => {
+  test('Deve rejeitar com um erro ao ler um arquivo não Markdown', () => {
+    const filePath = './mdFiles/text.txt'
+
+    return expect(fileRead(filePath)).rejects.toEqual(
+      `O caminho ${filePath} não é um arquivo Markdown válido.`
+    )
+  })
+
+  test('Deve ler o arquivo e extrair os links corretamente', () => {
     const filePath = './mdFiles/files.md'
     const mockResponse = { status: 200, ok: true }
 
@@ -67,7 +124,7 @@ describe('Deve ler o arquivo e extrair os links corretamente', () => {
   })
 })
 
-describe('extractLinks', () => {
+describe('Função extractLinks', () => {
   test('Deve extrair corretamente os links de um texto', () => {
     const text = 'Este é um exemplo de [link](https://exemplo.com) em um texto.'
     const filePath = 'example.md'
@@ -85,7 +142,7 @@ describe('extractLinks', () => {
   })
 })
 
-describe('statsLinks', () => {
+describe('Função statsLinks', () => {
   test('Deve retornar as estatísticas corretas para os links', () => {
     const links = [
       { href: 'https://exemplo.com/link1', ok: 'OK' },
@@ -109,26 +166,5 @@ describe('statsLinks', () => {
     expect(statistics.total).toBe(0)
     expect(statistics.unique).toBe(0)
     expect(statistics.broken).toBe(0)
-  })
-})
-
-test('Deve validar corretamente os links e lidar com falhas na requisição', () => {
-  const links = [
-    { href: 'https://exemplo.com/link1' },
-    { href: 'https://exemplo.com/link2' },
-    { href: 'https://exemplo.com/link3' }
-  ]
-
-  // Simula a falha na requisição HTTP
-  global.fetch.mockRejectedValue(new Error('Falha na requisição'))
-
-  return validateLinks(links).then((validatedLinks) => {
-    const expectedLinks = [
-      { href: 'https://exemplo.com/link1', status: 404, ok: 'FAIL' },
-      { href: 'https://exemplo.com/link2', status: 404, ok: 'FAIL' },
-      { href: 'https://exemplo.com/link3', status: 404, ok: 'FAIL' }
-    ]
-
-    expect(validatedLinks).toEqual(expectedLinks)
   })
 })
