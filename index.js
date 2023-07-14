@@ -1,4 +1,6 @@
 const fs = require('fs')
+const fetch = require('cross-fetch')
+const path = require('path')
 
 // Função para extrair o texto do link
 function extractLinks (text, filePath) {
@@ -15,20 +17,24 @@ function extractLinks (text, filePath) {
 
   return links
 }
+// Função para validar os links
 function validateLinks (links) {
   const promises = links.map((link) => {
     return fetch(link.href) // percorrer cada link e realizar uma requisição HTTP(fetch)
       .then((response) => {
         link.status = response.status
         link.ok = response.ok ? 'OK' : 'FAIL'
+        /* console.log(link)
+        console.log(response.ok) */
         return link
       })
-      .catch((error) => {
+      .catch(() => {
         link.status = 404
         link.ok = 'FAIL'
-        throw error // Rejeita a promessa com o erro original
+        return link // Rejeita a promessa com o erro original(chamando os links com o erro)
       })
   })
+  /* console.log(promises) */
 
   return Promise.all(promises)
   // As chamadas a fetch são encapsuladas em Promises e agrupadas usando Promise.all para obter um array de promessas que representa o resultado da validação de todos os links.
@@ -66,30 +72,24 @@ function statsLinks (links) {
 }
 
 // Função para a leitura recursiva de diretórios
-function readRecursion (dirPath, fileCallback) {
-  fs.readdir(dirPath, (err, files) => { // A função readdir do módulo fs é usada para listar os arquivos dentro do diretório
-    if (err) {
-      throw err
+// Função para a leitura recursiva de diretórios
+function readRecursion (absDirPath, fileCallback) {
+  try {
+    const files = fs.readdirSync(absDirPath)
+
+    for (const file of files) {
+      const filePath = path.join(absDirPath, file)
+      const stats = fs.statSync(filePath)
+
+      if (stats.isDirectory()) {
+        readRecursion(filePath, fileCallback)
+      } else if (stats.isFile() && file.endsWith('.md')) {
+        fileCallback(filePath)
+      }
     }
-
-    files.forEach((file) => {
-      const filePath = `${dirPath}/${file}` // diretório / e arquivo encontrado no diretório
-      //  A função stat é usada para obter informações sobre o arquivo
-      fs.stat(filePath, (err, stats) => { // stats: É um objeto que contém as informações do arquivo ou diretório, como tamanho, etc
-        if (err) {
-          throw err
-        }
-
-        if (stats.isDirectory()) {
-          // Caso seja um diretório, chama a função recursivamente
-          readRecursion(filePath, fileCallback)
-        } else if (stats.isFile() && file.endsWith('.md')) {
-          // Caso seja um arquivo Markdown, chamamos a função de callback
-          fileCallback(filePath)
-        }
-      })
-    })
-  })
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 // FUNÇÃO PRINCIPAL DO PROJETO - ler arquivo(s) e extrair os links
@@ -165,5 +165,6 @@ module.exports = {
   fileRead,
   validateLinks,
   statsLinks,
-  extractLinks
+  extractLinks,
+  readRecursion
 }
