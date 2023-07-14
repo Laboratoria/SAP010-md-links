@@ -2,6 +2,8 @@
 const program = require('commander')
 const { fileRead, validateLinks, statsLinks } = require('./index')
 const packageJson = require('./package.json')
+const colors = require('colors')
+const { table } = require('table')
 
 program.version(packageJson.version)
 
@@ -18,32 +20,50 @@ program
           return validateLinks(links)
             .then((validatedLinks) => {
               const statistics = statsLinks(validatedLinks)
-              console.log(`Links total: ${statistics.total}`)
-              console.log(`Unique links: ${statistics.unique}`)
-              console.log(`Broken links: ${statistics.broken}`)
+              console.log(colors.green(`Links total: ${statistics.total}`))
+              console.log(colors.yellow(`Unique links: ${statistics.unique}`))
+              console.log(colors.red(`Broken links: ${statistics.broken}`))
               console.log('-------------------------------')
             })
         } else if (options.validate) {
+          const data = [['href', 'text', 'status', 'file']]
           links.forEach((link) => {
-            console.log(`href: ${link.href}`)
-            console.log(`Text: ${link.text}`)
-            console.log(`Status: ${link.ok}`)
-            console.log(`File: ${link.file}`)
-            console.log('-------------------------------')
+            data.push([
+              colors.blue(link.href),
+              colors.magenta(link.text),
+              colors.yellow(link.ok),
+              colors.green(link.file)
+            ])
           })
+          const tableConfig = {
+            columns: {
+              0: { alignment: 'left' },
+              1: { alignment: 'left' },
+              2: { alignment: 'left' },
+              3: { alignment: 'left' }
+            }
+          }
+          const tableOutput = table(data, tableConfig)
+          console.log(tableOutput)
         } else if (options.stats) {
-          /* return statsLinks(links) */
           const statistics = statsLinks(links)
           console.log(`Links total: ${statistics.total}`)
           console.log(`Unique links: ${statistics.unique}`)
           console.log('-------------------------------')
         } else {
+          const data = [['href', 'text', 'file']]
           links.forEach((link) => {
-            console.log(`href: ${link.href}`)
-            console.log(`Text: ${link.text}`)
-            console.log(`File: ${link.file}`)
-            console.log('-------------------------------')
+            data.push([link.href, link.text, link.file])
           })
+          const tableConfig = {
+            columns: {
+              0: { alignment: 'left' },
+              1: { alignment: 'left' },
+              2: { alignment: 'left' }
+            }
+          }
+          const tableOutput = table(data, tableConfig)
+          console.log(tableOutput)
         }
       })
       .catch((error) => {
