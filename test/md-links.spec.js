@@ -1,10 +1,11 @@
-const {mdlinks} = require ('../index.js') ;
-const  path = require ('path');
-const  fetch = require ('cross-fetch');
+const path = require('path'); 
+const fetch = require('cross-fetch'); 
+const { mdlinks, fileRecursion, validateFetch } = require('../index.js');
 
-jest.mock('cross-fetch', () => jest.fn());
+jest.mock('cross-fetch', () => jest.fn()); // Cria um mock para a função 'fetch' usando o Jest
 
-describe('mdlinks', () => {
+// Descreve o conjunto de testes para a função 'validateFetch'
+describe('validateFetch', () => {
   let mockFetch;
 
   beforeEach(() => {
@@ -12,43 +13,73 @@ describe('mdlinks', () => {
     fetch.mockImplementation(mockFetch);
   });
 
-  it('Deve extrair o link válido Markdown', () => {
-    const filePath = './README.md';
-    
-    mockFetch.mockResolvedValueOnce({
-      status: 200,
-      ok: true
-    });
 
-    return mdlinks(filePath).then(result => {
-      expect(result.links[0]).toEqual(
-        { text: 'Markdown', href: 'https://pt.wikipedia.org/wiki/Markdown', file: 'README.md' }
-      );
-    });
-  });
-
-  describe('mdlinks', () => {
-    it('Deve retornar o nome do arquivo Markdown', () => {
-      const file = './pag/teste.md';
-
+  describe('validateFetch', () => {
+    it('Deve validar corretamente os links md', () => {
+      const links = { text: 'Markdown', href: 'http://example.com', file: 'README.md' };
       mockFetch.mockResolvedValueOnce({
         status: 200,
-        ok: true
+        ok: true,
       });
-
-      return mdlinks(file).then(result => {
-        expect(result.links[0].file).toBe(path.basename(file));
+      return validateFetch(links).then((result) => {
+        expect(result).toEqual(
+          { text: 'Markdown', href: 'http://example.com', file: 'README.md', status: 200, ok: 'ok' },
+        );
       });
     });
   });
 
-  it('Deve retornar uma mensagem informando que o arquivo não é um Markdown', () => {
-    const file = 'teste.txt';
+  it('Deve retornar o status "fail" quando a requisição falhar', () => {
+    const url = {
+      href: 'http://example.co',
+    };
+    mockFetch.mockRejectedValueOnce(new Error('Request failed'));
+    return validateFetch(url).then((result) => {
+      expect(result).toEqual({
+        ...url,
+        status: 'Request failed',
+        ok: 'fail',
+      });
+    });
+  });
 
-    mockFetch.mockRejectedValueOnce(new Error(`O ${file} não é um arquivo Markdown`));
 
-    return mdlinks(file).catch(error => {
-      expect(error.message).toEqual(`O ${file} não é um arquivo Markdown`);
+  describe('mdlinks', () => {
+    it('Deve retornar os links para um arquivo Markdown', () => {
+      const filePath = './README.md';
+      const expectedLinks =
+        { text: 'Markdown', href: 'https://pt.wikipedia.org/wiki/Markdown', file: 'README.md' };
+      return mdlinks(filePath).then((result) => {
+        expect(result.links[0]).toEqual(expectedLinks);
+      });
+    });
+
+    it('Deve retornar uma mensagem informando que o arquivo não é um Markdown', () => {
+      const file = 'teste.txt';
+      return mdlinks(file).catch((error) => {
+        expect(error.message).toEqual(`O ${file} não é um arquivo Markdown`);
+      });
+    });
+
+  it('Deve calcular corretamente as estatísticas dos links', () => {
+    const filePath = 'pag/teste.md';
+    const options = {};
+    return mdlinks(filePath, options).then(({ statistics }) => {
+      expect(statistics.total).toBe(2);
+      expect(statistics.unique).toBe(2);
+      expect(statistics.broken).toBe(0);
+    });
+  });
+  });
+
+
+  describe('fileRecursion', () => {
+    it('Deve chamar a função de callback para cada arquivo Markdown encontrado', () => {
+      const callback = jest.fn();
+      return fileRecursion('./pag', callback).then(() => {
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith(path.normalize('pag/teste.md')); // uso o path .normalize para pega a / correta
+      });
     });
   });
 });
