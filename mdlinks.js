@@ -19,12 +19,9 @@ program
     mdlinks(file, options)
       .then(({ links, statistics }) => {
         if (options.validate && options.stats) {
-          console.log(`Total: ${statistics.total}`);
-          console.log(`Unique: ${statistics.unique}`);
-          console.log((`Broken: ${(statistics.broken)}`)); 
-          const cliTable = new table({
+          const cliTableVali= new table({
             head: ['HREF', 'TEXT' , 'FILE', 'STATUS'],
-            colWidths: [35, 35, 12, 10],
+            colWidths: [25, 12, 10, 10], 
             style: { 
               head: ['blue', 'bold'], 
               border: ['white'], 
@@ -33,39 +30,47 @@ program
             },
             colAligns: ['left', 'left'],
           });
-
+        
           links.forEach((link) => {
             const text = (` ${link.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()}`);
             const status = link.ok === 'ok' ? okChalk(link.ok) : erroChalk(link.ok);
-            cliTable.push([link.href, text, link.file, status]);
+            cliTableVali.push([link.href, text, link.file, status]);
           });
-
+          console.log(tableChalk(cliTableVali.toString()));
+          const cliTable = new table({
+            head: ['STATS', 'UNIQUE','BROKEN' ],
+            colWidths: [10, 10, 10],
+            style: { 
+              head: ['blue', 'bold'], 
+              border: ['white'], 
+              default: true, 
+            },
+            colAligns: ['left','left'], 
+          });
+          cliTable.push([statistics.total, statistics.unique, statistics.broken]);
           console.log(tableChalk(cliTable.toString()));
         } else if (options.stats) {
-          console.log(`Total: ${statistics.total}`);
-          console.log(`Unique: ${statistics.unique}`);
-        } else if (options.validate) {
-          /* links.forEach((link) => {
-            console.log(`href: ${link.href}`);
-            console.log(`text: ${link.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()}`);
-            console.log(`file: ${link.file}`);
-            console.log(`Status Number: ${link.status}`);
-            if (link.ok === 'ok') {
-              console.log(okChalk(`status: ${link.ok}`));
-            } else {
-              console.log(erroChalk(`status: ${link.ok}`));
-            }
-            console.log('***********');
-          }); */
-
           const cliTable = new table({
-            head: ['HREF', 'TEXT' , 'FILE', 'STATUS', 'STATUS NUMBER'],
-            colWidths: [35, 35, 12, 12,18],
+            head: ['STATS', 'UNIQUE','BROKEN' ],
+            colWidths: [10, 10, 10],
             style: { 
               head: ['blue', 'bold'], 
               border: ['white'], 
               default: true,
               
+            },
+            colAligns: ['left','left'],
+          });
+          cliTable.push([statistics.total, statistics.unique, statistics.broken]);
+          console.log(tableChalk(cliTable.toString()));
+        } else if (options.validate) {
+          const cliTable = new table({
+            head: ['HREF', 'TEXT' , 'FILE', 'STATUS', 'STATUS NUMBER'],
+            colWidths: [25, 15, 10, 10,10],
+            style: { 
+              head: ['blue', 'bold'], 
+              border: ['white'], 
+              default: true, 
             },
             colAligns: ['left','left'],
           });
