@@ -2,10 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const fetch = require('cross-fetch');
 
-
 function mdlinks(file, options) {
   const filePath = path.resolve(file);
-  
+
   if (path.extname(file) === '.md') {
     return readMarkdownFile(filePath, options);
   } else {
@@ -22,7 +21,7 @@ function readMarkdownFile(filePath, options) {
         reject(error);
       } else {
         const links = findLinksInMarkdown(data, filePath);
-        
+
         if (options && options.validate) {
           validateLinks(links)
             .then((validatedLinks) => {
@@ -35,6 +34,41 @@ function readMarkdownFile(filePath, options) {
           resolve({ links, statistics });
         }
       }
+    });
+  });
+}
+
+function fileRecursion(pathDir, fileCb) {
+  return new Promise((resolve, reject) => {
+    fs.readdir(pathDir, (err, myFiles) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      const promises = myFiles.map((filePath) => {
+        const fileFound = path.join(pathDir, filePath);
+        return new Promise((resolveFile, rejectFile) => {
+          fs.stat(fileFound, (err, stats) => {
+            if (err) {
+              rejectFile(err);
+              return;
+            }
+            if (stats.isDirectory()) {
+              fileRecursion(fileFound, fileCb)
+                .then(resolveFile)
+                .catch(rejectFile);
+            } else if (stats.isFile() && path.extname(fileFound) === '.md') {
+              fileCb(fileFound);
+              resolveFile();
+            } else {
+              resolveFile();
+            }
+          });
+        });
+      });
+      Promise.all(promises)
+        .then(resolve)
+        .catch(reject);
     });
   });
 }
@@ -52,30 +86,36 @@ function findLinksInMarkdown(data, filePath) {
   return links;
 }
 
-
 function validateFetch(url) {
-  // Fazendo uma requisição HTTP para validar o link
   return fetch(url.href)
-    .then((response) => ({
-      ...url,
-      status: response.status,
-      ok: response.ok ? 'ok' : 'fail',
-    }))
+    .then((response) => {
+      if (response.ok) {
+        return {
+          ...url,
+          status: response.status,
+          ok: 'ok',
+        };
+      } else {
+        return {
+          ...url,
+          status: response.status,
+          ok: 'fail',
+        };
+      }
+    })
     .catch((error) => ({
       ...url,
-      status: error,
+      status: error.message,
       ok: 'fail',
     }));
 }
 
 function validateLinks(links) {
-  // Validando todos os links encontrados
   const linkPromises = links.map((link) => validateFetch(link));
   return Promise.all(linkPromises);
 }
 
 function statisticsLinks(links) {
-  // Obtendo estatísticas dos links
   const totalLinks = links.length;
   const uniqueLinks = [...new Set(links.map((link) => link.href))].length;
   const brokenLinks = links.filter((link) => link.ok === 'fail').length;
@@ -86,15 +126,4 @@ function statisticsLinks(links) {
   };
 }
 
-module.exports = {mdlinks, validateLinks, statisticsLinks};
-
-
-
-
-
-
-
-
-
-
-
+module.exports = { mdlinks, fileRecursion,findLinksInMarkdown, validateFetch, statisticsLinks, readMarkdownFile };
