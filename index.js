@@ -1,7 +1,7 @@
 // Importando os módulos necessários
-const fs = require('fs'); // Módulo para trabalhar com arquivos do sistema
-const path = require('path'); // Módulo para trabalhar com caminhos de arquivo
-const fetch = require('cross-fetch'); // Módulo para fazer requisições HTTP
+const fs = require('fs'); 
+const path = require('path'); 
+const fetch = require('cross-fetch');
 
 // Função principal que recebe um arquivo e opções
 function mdlinks(file, options) {
@@ -146,5 +146,5 @@ function statisticsLinks(links) {
   }; // Retorna um objeto com as estatísticas dos links
 }
 
-// Exporta as funções para serem utilizadas por outros módulos
+
 module.exports = { mdlinks, findFileRecursive, findLinksInMarkdown, validateFetch, statisticsLinks, readMarkdownFile };

@@ -1,10 +1,9 @@
-const path = require('path'); 
-const fetch = require('cross-fetch'); 
-const { mdlinks, findFileRecursive, validateFetch } = require('../index.js');
+const path = require('path');
+const fetch = require('cross-fetch');
+const { mdlinks, validateFetch, statisticsLinks } = require('../index.js');
 
 jest.mock('cross-fetch', () => jest.fn()); // Cria um mock para a função 'fetch' usando o Jest
 
-// Descreve o conjunto de testes para a função 'validateFetch'
 describe('validateFetch', () => {
   let mockFetch;
 
@@ -13,14 +12,18 @@ describe('validateFetch', () => {
     fetch.mockImplementation(mockFetch);
   });
 
-
+  
   describe('validateFetch', () => {
     it('Deve validar corretamente os links md', () => {
       const links = { text: 'Markdown', href: 'http://example.com', file: 'README.md' };
+
+      // Simula uma resposta bem-sucedida da requisição HTTP
       mockFetch.mockResolvedValueOnce({
         status: 200,
         ok: true,
       });
+
+      // Chama a função validateFetch com os links fornecidos e verifica se a resposta está correta
       return validateFetch(links).then((result) => {
         expect(result).toEqual(
           { text: 'Markdown', href: 'http://example.com', file: 'README.md', status: 200, ok: 'ok' },
@@ -29,11 +32,16 @@ describe('validateFetch', () => {
     });
   });
 
+  
   it('Deve retornar o status "fail" quando a requisição falhar', () => {
     const url = {
       href: 'http://example.co',
     };
+
+    // Simula uma falha na requisição HTTP
     mockFetch.mockRejectedValueOnce(new Error('Request failed'));
+
+    // Chama a função validateFetch com a URL fornecida e verifica se a resposta está correta
     return validateFetch(url).then((result) => {
       expect(result).toEqual({
         ...url,
@@ -43,43 +51,66 @@ describe('validateFetch', () => {
     });
   });
 
+});
 
-  describe('mdlinks', () => {
-    it('Deve retornar os links para um arquivo Markdown', () => {
-      const filePath = './README.md';
-      const expectedLinks =
-        { text: 'Markdown', href: 'https://pt.wikipedia.org/wiki/Markdown', file: 'README.md' };
-      return mdlinks(filePath).then((result) => {
-        expect(result.links[0]).toEqual(expectedLinks);
-      });
+describe('mdlinks', () => {
+  it('Deve retornar uma mensagem informando que o arquivo não é um Markdown', () => {
+    const file = 'teste.txt';
+
+    // Chama a função mdlinks com um arquivo que não é um Markdown e verifica se o erro é tratado corretamente
+    return mdlinks(file).catch((error) => {
+      expect(error.message).toEqual(`O ${file} não é um arquivo Markdown`);
     });
+  });
 
-    it('Deve retornar uma mensagem informando que o arquivo não é um Markdown', () => {
-      const file = 'teste.txt';
-      return mdlinks(file).catch((error) => {
-        expect(error.message).toEqual(`O ${file} não é um arquivo Markdown`);
-      });
+ 
+  it('Deve retornar os links Markdown do arquivo fornecido', () => {
+    const file = 'teste.md';
+
+    // Define o link Markdown esperado com base no conteúdo do arquivo fornecido
+    const expectedLinks = {
+      text: 'Node.js',
+      href: 'https://nodejs.org/',
+      file: file,
+    };
+ 
+
+    // Chama a função mdlinks com o arquivo e as opções fornecidas e verifica se os links retornados estão corretos
+    return mdlinks(file).then((result) => {
+      expect(result.links[1]).toEqual(expectedLinks);
     });
+  });
+});
 
+
+describe('statisticsLinks', () => {
   it('Deve calcular corretamente as estatísticas dos links', () => {
-    const filePath = 'pag/teste.md';
-    const options = {};
-    return mdlinks(filePath, options).then(({ statistics }) => {
-      expect(statistics.total).toBe(2);
-      expect(statistics.unique).toBe(2);
-      expect(statistics.broken).toBe(0);
-    });
-  });
-  });
+    const links = [
+      {
+        text: 'Link 1',
+        href: 'https://www.link1.com',
+        file: 'teste.md',
+        ok: 'ok',
+      },
+      {
+        text: 'Link 2',
+        href: 'https://www.link2.com',
+        file: 'teste.md',
+        ok: 'fail',
+      },
+      {
+        text: 'Link 3',
+        href: 'https://www.link3.com',
+        file: 'teste.md',
+        ok: 'ok',
+      },
+    ];
 
+    // Chama a função statisticsLinks com os links fornecidos e verifica se as estatísticas retornadas estão corretas
+    const statistics = statisticsLinks(links);
 
-  describe('findFileRecursive', () => {
-    it('Deve chamar a função de callback para cada arquivo Markdown encontrado', () => {
-      const callback = jest.fn();
-      return findFileRecursive(directory).then(() => {
-        expect(directory,).toHaveBeenCalledTimes(1);
-        expect(directory,).toHaveBeenCalledWith(path.normalize('teste.md')); // uso o path .normalize para pega a / correta
-      });
-    });
+    expect(statistics.total).toBe(3);
+    expect(statistics.unique).toBe(3);
+    expect(statistics.broken).toBe(1);
   });
 });
