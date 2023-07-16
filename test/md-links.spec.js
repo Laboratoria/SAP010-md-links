@@ -1,6 +1,6 @@
 const path = require('path'); 
 const fetch = require('cross-fetch'); 
-const { mdlinks, fileRecursion, validateFetch } = require('../index.js');
+const { mdlinks, findFileRecursive, validateFetch } = require('../index.js');
 
 jest.mock('cross-fetch', () => jest.fn()); // Cria um mock para a função 'fetch' usando o Jest
 
@@ -73,12 +73,12 @@ describe('validateFetch', () => {
   });
 
 
-  describe('fileRecursion', () => {
+  describe('findFileRecursive', () => {
     it('Deve chamar a função de callback para cada arquivo Markdown encontrado', () => {
       const callback = jest.fn();
-      return fileRecursion('./pag', callback).then(() => {
-        expect(callback).toHaveBeenCalledTimes(1);
-        expect(callback).toHaveBeenCalledWith(path.normalize('pag/teste.md')); // uso o path .normalize para pega a / correta
+      return findFileRecursive(directory).then(() => {
+        expect(directory,).toHaveBeenCalledTimes(1);
+        expect(directory,).toHaveBeenCalledWith(path.normalize('teste.md')); // uso o path .normalize para pega a / correta
       });
     });
   });
