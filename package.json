@@ -11,15 +11,22 @@
   },
   "description": "* [1. Prefácio](#1-prefácio)\r * [2. Resumo do projeto](#2-resumo-do-projeto)\r * [3. Objetivos de aprendizagem](#3-objetivos-de-aprendizagem)\r * [4. Considerações gerais](#4-considerações-gerais)\r * [5. Critérios de aceitação mínimos do projeto](#5-criterios-de-aceitação-mínimos-do-projeto)\r * [6. Entregáveis](#6-entregáveis)\r * [7. Hacker edition](#7-hacker-edition)\r * [8. Guias, dicas e leituras complementares](#8-guias-dicas-e-leituras-complementares)\r * [9. Checklist](#9-checklist)\r * [10. Dividindo o problema - babies steps](#10-dividindo-o-problema)",
   "main": "index.js",
+  "bin": {
+    "md-links": "cli.js"
+  },
   "directories": {
     "test": "test"
   },
   "scripts": {
     "test": "jest"
   },
-  "author": "",
+  "author": "Vitória Cabral",
   "license": "ISC",
   "devDependencies": {
     "jest": "^29.6.1"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "markdown-it": "^13.0.1"
   }
 }
