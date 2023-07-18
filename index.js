@@ -1,150 +1,151 @@
-// Importando os módulos necessários
-const fs = require('fs'); 
-const path = require('path'); 
+const fs = require('fs');
+const path = require('path');
 const fetch = require('cross-fetch');
 
-// Função principal que recebe um arquivo e opções
+// Função principal para encontrar e processar links em arquivos Markdown.
 function mdlinks(file, options) {
-  const currentDirectory = process.cwd(); // Obtém o diretório atual do processo
-  return findFileRecursive(currentDirectory, file) // Chama a função recursiva para encontrar o arquivo
-    .then((filePath) => {
-      if (filePath) {
-        return readMarkdownFile(filePath, options); // Lê o arquivo Markdown e retorna os links encontrados
-      } else {
-        console.log(`O arquivo ${file} não é um arquivo md.`); // Se o arquivo não for encontrado, exibe uma mensagem de erro
-        return Promise.resolve([]); // Retorna uma promessa resolvida vazia
-      }
-    })
-    .catch((error) => {
-      console.log(error); // Se ocorrer um erro, exibe a mensagem de erro
-      return Promise.reject(error); // Retorna uma promessa rejeitada com o erro
-    });
-}
-
-// Função recursiva para encontrar o arquivo em um diretório
-function findFileRecursive(directory, fileName, options) {
+  const filePath = path.resolve(file);
   return new Promise((resolve, reject) => {
-    fs.readdir(directory, (error, files) => { // Lê os arquivos do diretório
-      if (error) {
-        reject(error); // Se ocorrer um erro, rejeita a promessa com o erro
-        return;
-      }
-
-      const filePromises = files.map((file) => {
-        const filePath = path.join(directory, file); // Cria o caminho completo do arquivo
-
-        return new Promise((resolve) => {
-          fs.stat(filePath, (error, stats) => { // Obtém informações sobre o arquivo
-            if (!error && stats.isFile() && file === fileName && path.extname(file) === '.md') {
-              resolve(filePath);
-            } else if (!error && stats.isDirectory()) {
-              resolve(findFileRecursive(filePath, fileName, options)); // Chama a função recursivamente para encontrar o arquivo dentro do diretório
-            } else {
-              resolve(null);
+    fs.stat(filePath, (err, stats) => {
+      if (err) {
+         if (err.code === 'ENOENT') {
+          reject(`O arquivo ${filePath} não foi encontrado.`);
+        } else {
+          reject(err);
+        } 
+      } else {
+        if (stats.isDirectory()) {
+          const markdownFiles = [];
+          // Realizar busca recursiva para encontrar todos os arquivos Markdown dentro do diretório.
+          searchRecursion(filePath, (file) => {
+            if (file.endsWith('.md')) {
+              markdownFiles.push(file);
             }
           });
-        });
-      });
-
-      Promise.all(filePromises)
-        .then((results) => {
-          const foundFile = results.find((filePath) => filePath !== null); // Encontra o primeiro caminho de arquivo não nulo
-          if (foundFile) {
-            resolve(foundFile);
-          } else {
-            resolve(null); // Se nenhum arquivo correspondente for encontrado, resolve a promessa com o valor nulo
-          }
-        })
-        .catch((error) => reject(error));
+          const promises = markdownFiles.map((mdFile) =>
+            // Processar cada arquivo Markdown encontrado.
+            readMarkdownFile(mdFile, options)
+          );
+          Promise.all(promises)
+            .then((results) => {
+              // Mesclar os resultados de todos os arquivos Markdown.
+              const links = results.flatMap((result) => result.links);
+              const statistics = statisticsLinks(links);
+              resolve({ links, statistics });
+            })
+            .catch((error) => reject(error));
+        } else if (stats.isFile() && path.extname(file) === '.md') {
+          // Processar arquivo Markdown individualmente.
+          readMarkdownFile(filePath, options)
+            .then((result) => {
+              resolve(result);
+            })
+            .catch((error) => reject(error));
+        } else {
+          reject(`O ${file} não é um arquivo Markdown.`);
+          console.log(`O ${file} não é um arquivo Markdown.`)
+        }
+      }
     });
   });
 }
 
-// Função para ler o conteúdo de um arquivo Markdown
+// Função para realizar busca recursiva de arquivos e diretórios.
+function searchRecursion(absDirPath, fileCallback) {
+  try {
+    const files = fs.readdirSync(absDirPath);
+
+    for (const file of files) {
+      const filePath = path.join(absDirPath, file);
+      const stats = fs.statSync(filePath);
+
+      if (stats.isDirectory()) {
+        // Se for um diretório, realizar busca recursiva.
+        searchRecursion(filePath, fileCallback);
+      } else {
+        // Se for um arquivo, executar o callback passando o caminho do arquivo.
+        fileCallback(filePath);
+      }
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Função para ler e extrair os links de um arquivo Markdown.
 function readMarkdownFile(filePath, options) {
   return new Promise((resolve, reject) => {
-    fs.readFile(filePath, 'utf8', (error, data) => { // Lê o conteúdo do arquivo
+    fs.readFile(filePath, 'utf8', (error, data) => {
       if (error) {
-        console.log(error); // Se ocorrer um erro, exibe a mensagem de erro
-        reject(error); // Rejeita a promessa com o erro
-        return;
-      }
-
-      const links = findLinksInMarkdown(data, filePath); // Encontra os links no conteúdo do arquivo Markdown
-
-      if (options && options.validate) { // Se a opção de validação estiver ativada
-        validateLinks(links) // Valida os links encontrados
-          .then((validatedLinks) => {
-            const statistics = statisticsLinks(validatedLinks); // Calcula as estatísticas dos links
-            resolve({ file: filePath, links: validatedLinks, statistics }); // Resolve a promessa com as informações dos links e as estatísticas
-          })
-          .catch((error) => {
-            reject(error); // Se ocorrer um erro durante a validação, rejeita a promessa com o erro
-          });
+        console.log(error);
+        reject(error);
       } else {
-        const statistics = statisticsLinks(links); // Calcula as estatísticas dos links
-        resolve({ file: filePath, links, statistics }); // Resolve a promessa com as informações dos links e as estatísticas
+        // Encontrar todos os links no arquivo Markdown.
+        const links = findLinksInMarkdown(data, filePath);
+
+        if (options && options.validate) {
+          // Se a opção de validação estiver ativada, validar os links encontrados.
+          validateLinks(links)
+            .then((validatedLinks) => {
+              const statistics = statisticsLinks(validatedLinks);
+              resolve({ links: validatedLinks, statistics });
+            })
+            .catch((error) => reject(error));
+        } else {
+          // Caso contrário, calcular apenas as estatísticas dos links encontrados.
+          const statistics = statisticsLinks(links);
+          resolve({ links, statistics });
+        }
       }
     });
   });
 }
 
-// Função para encontrar os links no conteúdo do arquivo Markdown
+// Função para encontrar todos os links em um arquivo Markdown.
 function findLinksInMarkdown(data, filePath) {
-  const regex = /\[([^[\]]*?)\]\((https?:\/\/[^\s?#.].[^\s]*)\)/gm; // Expressão regular para encontrar os links
+  const regex = /\[([^[\]]*?)\]\((https?:\/\/[^\s?#.].[^\s]*)\)/gm;
   const links = [];
   let match;
   while ((match = regex.exec(data)) !== null) {
-    const text = match[1]; // Texto do link
-    const href = match[2]; // URL do link
-    const fileName = path.basename(filePath); // Nome do arquivo
-    links.push({ text, href, file: fileName }); // Adiciona o link encontrado à lista de links
+    const text = match[1];
+    const href = match[2];
+    const fileName = path.basename(filePath);
+    links.push({ text, href, file: fileName });
   }
-  return links; // Retorna a lista de links encontrados
+  return links;
 }
 
-// Função para validar um link fazendo uma requisição HTTP
+// Função para validar um link fazendo uma requisição HTTP.
 function validateFetch(url) {
   return fetch(url.href)
-    .then((response) => {
-      if (response.ok) {
-        return {
-          ...url,
-          status: response.status,
-          ok: 'ok',
-        };
-      } else {
-        return {
-          ...url,
-          status: response.status,
-          ok: 'fail',
-        };
-      }
-    })
+    .then((response) => ({
+      ...url,
+      status: response.status,
+      ok: response.ok ? 'ok' : 'fail',
+    }))
     .catch((error) => ({
       ...url,
-      status: error.message,
+      status: error,
       ok: 'fail',
     }));
 }
 
-// Função para validar todos os links encontrados
+// Função para validar todos os links encontrados.
 function validateLinks(links) {
-  const linkPromises = links.map((link) => validateFetch(link)); // Cria uma lista de promessas para cada link a ser validado
-  return Promise.all(linkPromises); // Retorna uma promessa que é resolvida quando todas as promessas individuais forem resolvidas
+  const linkPromises = links.map((link) => validateFetch(link));
+  return Promise.all(linkPromises);
 }
 
-// Função para calcular as estatísticas dos links
+// Função para calcular estatísticas dos links encontrados.
 function statisticsLinks(links) {
-  const totalLinks = links.length; // Total de links
-  const uniqueLinks = [...new Set(links.map((link) => link.href))].length; // Total de links únicos
-  const brokenLinks = links.filter((link) => link.ok === 'fail').length; // Total de links quebrados
+  const totalLinks = links.length;
+  const uniqueLinks = [...new Set(links.map((link) => link.href))].length;
+  const brokenLinks = links.filter((link) => link.ok === 'fail').length;
   return {
     total: totalLinks,
     unique: uniqueLinks,
     broken: brokenLinks,
-  }; // Retorna um objeto com as estatísticas dos links
+  };
 }
 
-
-module.exports = { mdlinks, findFileRecursive, findLinksInMarkdown, validateFetch, statisticsLinks, readMarkdownFile };
+module.exports = { mdlinks, validateLinks, searchRecursion, validateFetch, statisticsLinks };
