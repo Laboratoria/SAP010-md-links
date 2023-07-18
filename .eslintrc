@@ -4,5 +4,23 @@
   },
   "parserOptions": {
     "ecmaVersion": 8
+  },
+  "extends": [
+    "airbnb",
+    "plugin:jest/recommended"
+  ],
+  "rules": {
+    "linebreak-style": 0,
+    "prefer-destructuring": 0,
+    "no-param-reassign": ["error", { "props": false }],
+    "import/extensions": 0,
+    "import/prefer-default-export": 0,
+    "no-console": 0,
+    "jest/no-disabled-tests": "warn",
+    "jest/no-focused-tests": "error",
+    "jest/no-identical-title": "error",
+    "jest/prefer-to-have-length": "warn",
+    "jest/valid-expect": "error",
+    "arrow-body-style": "off"
   }
 }
