@@ -1,10 +1,6 @@
 const fs = require('fs');
+const path = require('path')
 
-const path = require('path');
-
-//  const axios = require('axios');
-
-const pathInput = process.argv[2];
 
 /* a função mdLinks deve retornar uma array, em que cada item da array é um objeto
  cada objeto é um link encontrado no arquivo, e possui três keys:
@@ -32,47 +28,46 @@ const pathInput = process.argv[2];
 
 */
 
-function getLinksFromFile(pathInput) {
+function getLinksFromFile(path) {
   return new Promise((resolve, reject) => {
-    fs.readFile(pathInput, (err, fileContent) => {
+    fs.readFile(path, (err, fileContent) => {
       if (err) {
         reject(`Erro ao retornar arquivos: ${err}`);
-      } else if (!pathInput.endsWith('.md')) {
+      } else if (!path.endsWith('.md')) {
         reject('O caminho de entrada não corresponde a um arquivo .md');
       } else {
-        const regex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|]|\bwww\.[\w-]+\.[\w./?%&=~-]+)/gi;
+        const regex =
+          /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|]|\bwww\.[\w-]+\.[\w./?%&=~-]+)/gi;
         const strFiles = fileContent.toString();
         const links = strFiles.match(regex) || [];
-
         const regexText = /\[(.*?)\]/g;
         const linkText = strFiles.match(regexText) || [];
 
         const linkObjects = links.map((link, index) => ({
           href: link,
           text: linkText[index],
-          file: pathInput,
+          file: path,
         }));
-        // trocar esse console para resolve depois (chamar o console no cli.js)
-        linkObjects.forEach((link, index) => {
-          console.log(`${index + 1}.`, link);
-        });
+
+        resolve(linkObjects);
       }
     });
   });
 }
 
+
 //  retorna a lista de arquivos md em um diretório
 
-function readDirectory(pathInput) {
+function readDirectory(path) {
   try {
-    const fileList = fs.readdirSync(pathInput);
+    const fileList = fs.readdirSync(path);
 
     const filteredList = fileList.filter((file) => {
       return path.extname(file) === '.md';
     });
 
     filteredList.forEach((file) => {
-      const filePath = path.join(pathInput, file);
+      const filePath = path.join(path, file);
       getLinksFromFile(filePath);
     });
   } catch (err) {
@@ -80,29 +75,20 @@ function readDirectory(pathInput) {
   }
 }
 
-function mdLinks() {
+function mdLinks(path, options) {
   return new Promise((resolve, reject) => {
-    const fileCheck = fs.existsSync(pathInput);
-
-    if (!fileCheck) {
-      reject(new Error('O arquivo não existe'));
-    } else {
-      fs.stat(pathInput, (err, stats) => {
-        if (!err) {
-          if (stats.isFile()) {
-            resolve(getLinksFromFile(pathInput));
-          } else if (stats.isDirectory()) {
-            resolve(readDirectory(pathInput));
-          }
+    fs.stat(path, (err, stats) => {
+      if (!err) {
+        if (stats.isFile()) {
+          resolve(getLinksFromFile(path));
+        } else if (stats.isDirectory()) {
+          resolve(readDirectory(path));
         }
-      });
-    }
+      }
+    });
   });
 }
 
-mdLinks(pathInput);
-
 // retorna os links de um arquivo específico (como objetos)
-
 
 module.exports = mdLinks;
