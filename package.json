@@ -1,5 +1,5 @@
 {
-  "name": "md-links",
+  "name": "md-links-raquel-maia",
   "version": "0.1.0",
   "engines": {
     "node": ">=16.x"
@@ -12,6 +12,7 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "cli-table": "^0.3.11",
+    "cli-table3": "^0.6.3",
     "commander": "^11.0.0",
     "cross-fetch": "^4.0.0",
     "fs": "^0.0.1-security",
@@ -37,5 +38,25 @@
   },
   "scripts": {
     "test": "jest --coverage"
-  }
+  },
+  "description": "* [1. Prefácio](#1-prefácio)\r * [2. Resumo do projeto](#2-resumo-do-projeto)\r * [3. Objetivos de aprendizagem](#3-objetivos-de-aprendizagem)\r * [4. Considerações gerais](#4-considerações-gerais)\r * [5. Critérios de aceitação mínimos do projeto](#5-criterios-de-aceitação-mínimos-do-projeto)\r * [6. Entregáveis](#6-entregáveis)\r * [7. Hacker edition](#7-hacker-edition)\r * [8. Guias, dicas e leituras complementares](#8-guias-dicas-e-leituras-complementares)\r * [9. Checklist](#9-checklist)\r * [10. Dividindo o problema - babies steps](#10-dividindo-o-problema)",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raquel-maia/SAP010-md-links.git"
+  },
+  "keywords": [
+    "markdown",
+    "nodejs",
+    "arquivos md"
+  ],
+  "author": "Raquel Maia",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/raquel-maia/SAP010-md-links/issues"
+  },
+  "homepage": "https://github.com/raquel-maia/SAP010-md-links#readme"
 }

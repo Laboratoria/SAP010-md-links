@@ -3,11 +3,22 @@
 const program = require('commander');
 const { mdlinks } = require('./index.js');
 const chalk = require('chalk');
-const table = require('cli-table');
+const Table = require('cli-table3');
 
-const erroChalk = (texto) => chalk.bold.rgb(0,0,0).bgRgb(255,0,0) (texto);
-const okChalk = (texto) => chalk.blackBright.bold.bgGreen.bold (texto);
-const tableChalk = (texto) => chalk.bold.rgb(240,248,255).bgRgb(128,0,128)(texto);
+const erroChalk = (texto) => chalk.red.italic(texto);
+const okChalk = (texto) => chalk.green.italic(texto);
+const hrefChalk = (texto) => chalk.blue.italic(texto);
+const textChalk = (texto) => chalk.green.italic(texto);
+const fileChalk = (texto) => chalk.magenta.italic(texto);
+const statusChalk = (status) => {
+  if (status === 'ok') {
+    return chalk.blue.italic(status);
+  } else if (status === 'broken') {
+    return chalk.red.italic(status);
+  } else {
+    return chalk.yellow.italic(status);
+  }
+};
 
 program
   .version('1.0.0')
@@ -19,89 +30,83 @@ program
     mdlinks(file, options)
       .then(({ links, statistics }) => {
         if (options.validate && options.stats) {
-          const cliTableVali= new table({
-            head: ['HREF', 'TEXT' , 'FILE', 'STATUS'],
-            colWidths: [25, 12, 10, 10], 
-            style: { 
-              head: ['blue', 'bold'], 
-              border: ['white'], 
-              default: true,
-              
+          const cliTableVali = new Table({
+            head: ['HREF', 'TEXT', 'FILE', 'STATUS'],
+            colWidths: [35, 35, 20, 15], // Ajustando a largura das colunas para evitar quebras
+            style: {
+              head: ['white', 'bold'],
+              border: ['cyan'],
+              'padding-left': 0, // Removendo o espaço extra à esquerda para diminuir o tamanho da fonte
+              'padding-right': 0, // Removendo o espaço extra à direita para diminuir o tamanho da fonte
             },
-            colAligns: ['left', 'left'],
           });
-        
+
           links.forEach((link) => {
             const text = (` ${link.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()}`);
             const status = link.ok === 'ok' ? okChalk(link.ok) : erroChalk(link.ok);
-            cliTableVali.push([link.href, text, link.file, status]);
+            cliTableVali.push([hrefChalk(link.href), textChalk(text), fileChalk(link.file), statusChalk(status + ' => ' + link.status)]);
           });
-          console.log(tableChalk(cliTableVali.toString()));
-          const cliTable = new table({
-            head: ['STATS', 'UNIQUE','BROKEN' ],
+
+          console.log(cliTableVali.toString());
+
+          const cliTable = new Table({
+            head: ['STATS', 'UNIQUE', 'BROKEN'],
             colWidths: [10, 10, 10],
-            style: { 
-              head: ['blue', 'bold'], 
-              border: ['white'], 
-              default: true, 
+            style: {
+              head: ['white', 'bold'],
+              border: ['cyan'],
             },
-            colAligns: ['left','left'], 
           });
+
           cliTable.push([statistics.total, statistics.unique, statistics.broken]);
-          console.log(tableChalk(cliTable.toString()));
+          console.log(cliTable.toString());
         } else if (options.stats) {
-          const cliTable = new table({
-            head: ['STATS', 'UNIQUE','BROKEN' ],
+          const cliTable = new Table({
+            head: ['STATS', 'UNIQUE', 'BROKEN'],
             colWidths: [10, 10, 10],
-            style: { 
-              head: ['blue', 'bold'], 
-              border: ['white'], 
-              default: true,
-              
+            style: {
+              head: ['white', 'bold'],
+              border: ['cyan'],
             },
-            colAligns: ['left','left'],
           });
+
           cliTable.push([statistics.total, statistics.unique, statistics.broken]);
-          console.log(tableChalk(cliTable.toString()));
+          console.log(cliTable.toString());
         } else if (options.validate) {
-          const cliTable = new table({
-            head: ['HREF', 'TEXT' , 'FILE', 'STATUS', 'STATUS NUMBER'],
-            colWidths: [25, 15, 10, 10,10],
-            style: { 
-              head: ['blue', 'bold'], 
-              border: ['white'], 
-              default: true, 
+          const cliTable = new Table({
+            head: ['HREF', 'TEXT', 'FILE', 'STATUS'],
+            colWidths: [35, 35, 20, 15],
+            style: {
+              head: ['white', 'bold'],
+              border: ['cyan'],
+              'padding-left': 0,
+              'padding-right': 0,
             },
-            colAligns: ['left','left'],
           });
 
           links.forEach((link) => {
+            const text = (` ${link.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()}`);
             const status = link.ok === 'ok' ? okChalk(link.ok) : erroChalk(link.ok);
-            const text = (` ${link.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()}`);
-            cliTable.push([link.href, text, link.file, status, link.status]);
+            cliTable.push([hrefChalk(link.href), textChalk(text), fileChalk(link.file), statusChalk(status + ' => ' + link.status)]);
           });
-          console.log(tableChalk(cliTable.toString()));
-          
+
+          console.log(cliTable.toString());
         } else {
-          
-          const cliTable = new table({
-            head: ['HREF', 'TEXT' , 'FILE'],
-            colWidths: [35, 35, 12],
-            style: { 
-              head: ['blue', 'bold'], 
-              border: ['white'], 
-              default: true,
-              
+          const cliTable = new Table({
+            head: ['HREF', 'TEXT', 'FILE'],
+            colWidths: [45, 45, 12],
+            style: {
+              head: ['white', 'bold'],
+              border: ['cyan'],
             },
-            colAligns: ['left','left'],
           });
 
           links.forEach((link) => {
             const text = (` ${link.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()}`);
-            cliTable.push([link.href, text, link.file]);
+            cliTable.push([hrefChalk(link.href), textChalk(text), fileChalk(link.file)]);
           });
 
-        console.log(tableChalk(cliTable.toString()));
+          console.log(cliTable.toString());
         }
       })
       .catch((error) => {
