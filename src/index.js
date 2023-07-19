@@ -1,32 +1,5 @@
 const fs = require('fs');
-const path = require('path')
-
-
-/* a função mdLinks deve retornar uma array, em que cada item da array é um objeto
- cada objeto é um link encontrado no arquivo, e possui três keys:
- href, text, file recebe como parâmetro: o caminho e as opções selecionadas (validate e/ou stats)
- primeiro verifica se o path leva para um arquivo ou diretório
- se levar para um arquivo, resolve a promessa com getLinksFromFile
- se levar para um diretório, resolve com readDirectory
- a partir daí temos os links, as funções getLinksFromFile e readDirectory devem retornar
- cada link como um objeto dentro de uma array, com as keys
-
- link = {
-  "href": www.oi.com,
-  "text": ausdhas,
-  "file": path
- }
-
- com validate
- link = {
-  "href": www.oi.com,
-  "text": ausdhas,
-  "file": path,
-  "status": resposta HTTP,
-  "ok": fail/ok
- }
-
-*/
+const path = require('path');
 
 function getLinksFromFile(path) {
   return new Promise((resolve, reject) => {
@@ -43,18 +16,17 @@ function getLinksFromFile(path) {
         const regexText = /\[(.*?)\]/g;
         const linkText = strFiles.match(regexText) || [];
 
-        const linkObjects = links.map((link, index) => ({
+        const linksObject = links.map((link, index) => ({
           href: link,
-          text: linkText[index],
+          text: linkText[index].replace(/^\[|\]$/g, ''),
           file: path,
         }));
 
-        resolve(linkObjects);
+        resolve(linksObject);
       }
     });
   });
 }
-
 
 //  retorna a lista de arquivos md em um diretório
 
