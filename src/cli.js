@@ -43,11 +43,11 @@ mdLinks(path, options).then((linksObject) => {
 function printLinks(linksObject) {
   linksObject.forEach((link) => {
     if (link.ok === 'Ok') {
-      console.log(chalk.cyan(`href: ${link.href} `));
+      console.log(chalk.cyan(`\nhref: ${link.href} `));
       console.log(chalk.yellow(`text: ${link.text}`));
       console.log(chalk.magenta(`file: ${link.file}`));
       console.log(chalk.blue(`status: ${link.status}`));
-      console.log(chalk.green(`ok: ${link.ok}`));
+      console.log(chalk.green(`ok: ${link.ok} \n`));
       console.log(
         `------------------------------------------------------------------------`
       );

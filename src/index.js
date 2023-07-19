@@ -17,8 +17,8 @@ function getLinksFromFile(path) {
         while ((match = regex.exec(strFiles))) {
           const [, text, href] = match;
           const link = {
-            href: href || text, // Se href estiver vazio, use o texto como link
-            text: text.trim(),
+            href: href, 
+            text: text.replace(/[\r\n]+/g, '').trim(),
             file: path,
           };
           links.push(link);
