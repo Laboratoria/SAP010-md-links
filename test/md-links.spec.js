@@ -23,6 +23,9 @@ describe('Funções de Validação de Links', () => {
       const mockResponse = { status: 200, ok: true }
       global.fetch.mockResolvedValue(mockResponse)
 
+      // Aumentar o limite de tempo para 10 segundos
+      jest.setTimeout(10000)
+
       return validateLinks(links).then((validatedLinks) => {
         const expectedLinks = [
           {

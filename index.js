@@ -4,15 +4,18 @@ const path = require('path')
 
 // Função para extrair o texto do link
 function extractLinks (text, filePath) {
-  const regex = /\[([^[\]]*?)\]\((https?:\/\/[^\s?#.].[^\s]*)\)/gm
+  const regex = /\[([^[\]]*?)\]\((https?:\/\/[^\s?#.].[^\s]*)\)/gm // procura por padrões MD
   const links = []
-  let match
+  let match // Variável para armazenar o resultado de cada execução da expressão regular
 
   while ((match = regex.exec(text)) !== null) {
-    const linkText = match[1]
-    const linkHref = match[2]
+    const linkText = match[1] // O match[1] representa o texto do link (texto entre colchetes [])
+    const linkHref = match[2] // O match[2] representa o href do link (URL entre parênteses ())
+
+    // Cria um objeto representando o link encontrado, contendo as informações
+    // de href (URL), text (texto do link) e file (caminho do arquivo onde foi encontrado)
     const link = { href: linkHref, text: linkText, file: filePath }
-    links.push(link)
+    links.push(link) // add no array links
   }
 
   return links
@@ -40,28 +43,10 @@ function validateLinks (links) {
   // As chamadas a fetch são encapsuladas em Promises e agrupadas usando Promise.all para obter um array de promessas que representa o resultado da validação de todos os links.
 }
 
-/* // Função para validar os links
-function validateLinks (links) {
-  const promises = links.map((link) => {
-    return fetch(link.href)
-      .then((response) => {
-        link.status = response.status
-        link.ok = response.ok ? 'OK' : 'FAIL'
-        return link
-      })
-      .catch(() => {
-        link.status = 404
-        link.ok = 'FAIL'
-        return link
-      })
-  })
-
-  return Promise.all(promises)
-} */
-
 // Função para as estatísticas dos links
 function statsLinks (links) {
   const linksSize = links.length
+  // cria um novo array com map p/extrair href e Set para criar um conjunto de valores únicos (ou seja, remover duplicata)
   const uniqueLinks = [...new Set(links.map((link) => link.href))].length
   const brokenLinks = links.filter((link) => link.ok === 'FAIL').length
   return {
@@ -72,14 +57,13 @@ function statsLinks (links) {
 }
 
 // Função para a leitura recursiva de diretórios
-// Função para a leitura recursiva de diretórios
 function readRecursion (absDirPath, fileCallback) {
   try {
     const files = fs.readdirSync(absDirPath)
 
-    for (const file of files) {
-      const filePath = path.join(absDirPath, file)
-      const stats = fs.statSync(filePath)
+    for (const file of files) { // Loop para percorrer cada arquivo encontrado no diretório
+      const filePath = path.join(absDirPath, file) // absDirPath é o caminho absoluto do diretório - Constrói o caminho completo do arquivo com o file
+      const stats = fs.statSync(filePath) // Obtém informações sobre o arquivo (se é um diretório, arquivo, etc.)
 
       if (stats.isDirectory()) {
         readRecursion(filePath, fileCallback)

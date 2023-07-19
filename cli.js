@@ -20,7 +20,8 @@ program
           return validateLinks(links)
             .then((validatedLinks) => {
               const statistics = statsLinks(validatedLinks)
-              console.log(colors.green(`Links total: ${statistics.total}`))
+              console.log('-------------------------------')
+              console.log(colors.green(`Total links: ${statistics.total}`))
               console.log(colors.yellow(`Unique links: ${statistics.unique}`))
               console.log(colors.red(`Broken links: ${statistics.broken}`))
               console.log('-------------------------------')
@@ -31,7 +32,7 @@ program
             data.push([
               colors.blue(link.href),
               colors.magenta(link.text),
-              colors.yellow(link.ok),
+              colors.yellow(link.ok + ' / ' + link.status),
               colors.green(link.file)
             ])
           })
@@ -47,8 +48,9 @@ program
           console.log(tableOutput)
         } else if (options.stats) {
           const statistics = statsLinks(links)
-          console.log(`Links total: ${statistics.total}`)
-          console.log(`Unique links: ${statistics.unique}`)
+          console.log('-------------------------------')
+          console.log(colors.green(`Links total: ${statistics.total}`))
+          console.log(colors.yellow(`Unique links: ${statistics.unique}`))
           console.log('-------------------------------')
         } else {
           const data = [['href', 'text', 'file']]
