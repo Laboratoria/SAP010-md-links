@@ -27,5 +27,8 @@
   "bugs": {
     "url": "https://github.com/jesszanon/SAP010-md-links/issues"
   },
-  "homepage": "https://github.com/jesszanon/SAP010-md-links#readme"
+  "homepage": "https://github.com/jesszanon/SAP010-md-links#readme",
+  "devDependencies": {
+    "jest": "^29.6.1"
+  }
 }
