@@ -63,7 +63,7 @@ function printLinks(linksObject) {
     } else {
       console.log(chalk.cyan(`\nhref: ${link.href} `));
       console.log(chalk.yellow(`text: ${link.text}`));
-      console.log(chalk.magenta(`file: ${link.file} \n`))
+      console.log(chalk.magenta(`file: ${link.file} \n`));
       console.log(
         `------------------------------------------------------------------------`
       );

@@ -9,20 +9,22 @@ function getLinksFromFile(path) {
       } else if (!path.endsWith('.md')) {
         reject('O caminho de entrada não corresponde a um arquivo .md');
       } else {
-        const regex =
-          /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|]|\bwww\.[\w-]+\.[\w./?%&=~-]+)/gi;
+        const regex = /\[([^[\]]+)\]\(([^()\s]+|\S+)?\)/g;
         const strFiles = fileContent.toString();
-        const links = strFiles.match(regex) || [];
-        const regexText = /\[(.*?)\]/g;
-        const linkText = strFiles.match(regexText) || [];
+        const links = [];
 
-        const linksObject = links.map((link, index) => ({
-          href: link,
-          text: linkText[index].replace(/^\[|\]$/g, ''),
-          file: path,
-        }));
+        let match;
+        while ((match = regex.exec(strFiles))) {
+          const [, text, href] = match;
+          const link = {
+            href: href || text, // Se href estiver vazio, use o texto como link
+            text: text.trim(),
+            file: path,
+          };
+          links.push(link);
+        }
 
-        resolve(linksObject);
+        resolve(links);
       }
     });
   });
