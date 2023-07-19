@@ -1,8 +1,14 @@
 teste
 
-[google] www.google.com
+isso não é um link 
 
-[facebook] www.facebook.com
+[google](https://www.google.com/)
+
+[facebook](https://www.facebook.com/)
 
 lalalalalala
-https://www.github.com/
+ 
+[gitHub](https://www.github.com/)
+
+[link quebrado](https://www.ashdkajsdla.com/)
+
