@@ -9,3 +9,12 @@ const optionsInput = {
 };
 
 mdLinks(pathInput, optionsInput).then()
+
+
+
+/*
+if (links && links.length > 0) {
+  links.forEach((link, index) => {
+    console.log(`${index + 1}. href ${link}`);
+
+*/

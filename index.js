@@ -1,7 +1,41 @@
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios')
 const pathInput = process.argv[2];
 
+
+/* a função mdLinks deve retornar uma array, em que cada item da array é um objeto
+ cada objeto é um link encontrado no arquivo, e possui três keys:
+ href, text, file 
+ recebe como parâmetro: o caminho e as opções selecionadas (validate e/ou stats)
+ primeiro verifica se o path leva para um arquivo ou diretório
+ se levar para um arquivo, resolve a promessa com getLinksFromFile
+ se levar para um diretório, resolve com readDirectory
+ a partir daí temos os links, as funções getLinksFromFile e readDirectory devem retornar
+ cada link como um objeto dentro de uma array, com as keys
+
+
+ link = {
+  "href": www.oi.com,
+  "text": ausdhas,
+  "file": path
+ }
+
+ com validate
+ link = {
+  "href": www.oi.com,
+  "text": ausdhas,
+  "file": path,
+  "status": resposta HTTP,
+  "ok": fail/ok 
+ }
+
+
+
+
+
+
+*/
 function mdLinks(pathInput) {
   return new Promise((resolve, reject) => {
     const fileCheck = fs.existsSync(pathInput);
@@ -13,10 +47,12 @@ function mdLinks(pathInput) {
         if (!err) {
           if (stats.isFile()) {
             resolve(getLinksFromFile(pathInput));
+            
           } else if (stats.isDirectory()) {
             resolve(readDirectory(pathInput));
           }
         }
+
       });
     }
   });
@@ -24,26 +60,28 @@ function mdLinks(pathInput) {
 
 mdLinks(pathInput);
 
-// retorna os links de um arquivo específico
+// retorna os links de um arquivo específico (como objetos)
 function getLinksFromFile(pathInput) {
-  fs.readFile(pathInput, (err, fileContent) => {
-    if (err) {
-      console.error('Erro ao retornar arquivos', err);
-    } else if (!pathInput.endsWith('.md')) {
-      console.error('O caminho de entrada não corresponde a um arquivo .md');
-    } else {
-      const regex =
-        /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|]|\bwww\.[\w-]+\.[\w./?%&=~-]+)/gi;
-      const strFiles = fileContent.toString();
-      const links = strFiles.match(regex);
-      if (links && links.length > 0) {
-        links.forEach((link, index) => {
-          console.log(`${index + 1}. href ${link}`);
-        });
+  return new Promise((resolve, reject) => {
+    fs.readFile(pathInput, (err, fileContent) => {
+      if (err) {
+        reject(`Erro ao retornar arquivos: ${err}`);
+      } else if (!pathInput.endsWith('.md')) {
+        reject('O caminho de entrada não corresponde a um arquivo .md');
       } else {
-        console.log('Nenhum link encontrado');
+        const regex =
+          /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|]|\bwww\.[\w-]+\.[\w./?%&=~-]+)/gi;
+        const strFiles = fileContent.toString();
+        const links = strFiles.match(regex) || [];
+        const linkObjects = links.map((link) => ({
+          href: link,
+          text: "em construção",
+          file: pathInput
+        }))
+        // trocar esse console para resolve depois (chamar o console no cli.js)
+        console.log(linkObjects);
       }
-    }
+    });
   });
 }
 
