@@ -17,7 +17,7 @@ function extractLinks(markdown) {
 }
 
 function validateLink(link) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     fetch(link.href)
       .then((response) => {
         link.status = response.status;
@@ -25,10 +25,9 @@ function validateLink(link) {
         resolve(link);
       })
       .catch(() => {
-        link.status = 404; // Marcando o status como 404 (Not Found) para link quebrado
-        link.ok = false; // Marcando como não ok (false)
+        link.status = 404;
+        link.ok = false;
         resolve(link);
-        reject(new Error('Error, link quebrado'));
       });
   });
 }
@@ -38,95 +37,94 @@ function fileMD(filePath) {
   return ext === '.md';
 }
 
-function mdLinks(filePath, options = {}) {
+function readAndExtractLinks(filePath) {
   return new Promise((resolve, reject) => {
-    if (!fileMD(filePath)) {
-      reject(new Error('Caminho do arquivo invalido, a extensão precisa ser ".m" '));
-      return;
-    }
-    const absolutePath = path.resolve(filePath);
-
-    fs.readFile(absolutePath, 'utf8', (err, data) => {
+    fs.readFile(filePath, 'utf8', (err, data) => {
       if (err) {
         reject(err);
         return;
       }
 
       const links = extractLinks(data);
+      resolve(links);
+    });
+  });
+}
 
-      if (options.validate) {
-        const promises = links.map((link) => validateLink(link));
-        Promise.all(promises)
-          .then((updatedLinks) => {
-            resolve(updatedLinks);
-          })
-          .catch((error) => {
-            reject(error);
+function readDirectoryRecursive(directoryPath) {
+  return new Promise((resolve, reject) => {
+    fs.readdir(directoryPath, { withFileTypes: true }, (err, files) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      const filePromises = files.map((file) => {
+        const filePath = path.join(directoryPath, file.name);
+        if (file.isDirectory()) {
+          return readDirectoryRecursive(filePath);
+        } else if (fileMD(filePath)) {
+          return readAndExtractLinks(filePath);
+        }
+        return null;
+      });
+
+      Promise.all(filePromises)
+        .then((results) => {
+          const allLinks = results.filter((links) => links !== null).flat();
+          resolve(allLinks);
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
+  });
+}
+
+function mdLinks(filePath, options = {}) {
+  return new Promise((resolve, reject) => {
+    const absolutePath = path.resolve(filePath);
+
+    fs.stat(absolutePath, (err, stats) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      if (stats.isDirectory()) {
+        readDirectoryRecursive(absolutePath)
+          .then((links) => {
+            if (options.validate) {
+              const promises = links.map((link) => validateLink(link));
+              Promise.all(promises)
+                .then((updatedLinks) => {
+                  resolve(updatedLinks);
+                })
+                .catch((error) => {
+                  reject(error);
+                });
+            } else {
+              resolve(links);
+            }
+          });
+      } else if (fileMD(absolutePath)) {
+        readAndExtractLinks(absolutePath)
+          .then((links) => {
+            if (options.validate) {
+              const promises = links.map((link) => validateLink(link));
+              Promise.all(promises)
+                .then((updatedLinks) => {
+                  resolve(updatedLinks);
+                });
+            } else {
+              resolve(links);
+            }
           });
       } else {
-        resolve(links);
+        reject(new Error('Caminho do arquivo inválido, a extensão precisa ser ".md"'));
       }
     });
   });
 }
 
 module.exports = { mdLinks };
-
-/* mdLinks('./src/file/file.md')
-  .then((links) => {
-    console.log(links);
-  })
-  .catch((error) => {
-    console.error(error.message);
-  });
-
-mdLinks('./src/file/file.md', { validate: true })
-  .then((links) => {
-    console.log(links);
-  })
-  .catch((error) => {
-    console.error(error.message);
-  });
-
-mdLinks('./src/file', { validate: true })
-  .then((links) => {
-    console.log(links);
-  })
-  .catch((error) => {
-    console.error(error.message);
-  }); */
-
-/* const { read } = require('./read.js');
-const { validateFunction, getLinks } = require('./options.js');
-
-function mdLinks(pathFile, option) {
-  return new Promise((resolve, reject) => {
-    read(pathFile)
-      .then((fileContent) => {
-        if (!Array.isArray(fileContent)) {
-          getLinks(fileContent)
-            .then((linksObj) => {
-              if (!option.validate) {
-                resolve(linksObj);
-              } else {
-                validateFunction(linksObj)
-                  .then((arrayLinkFetchResolved) => {
-                    resolve(arrayLinkFetchResolved);
-                  })
-                  .catch(reject);
-              }
-            })
-            .catch(reject);
-        } else {
-          Promise.all(fileContent.map((objContent) => getLinks(objContent)))
-            .then((linksObjArray) => {
-              resolve(linksObjArray.flat());
-            })
-            .catch(reject);
-        }
-      })
-      .catch(reject);
-  });
-}
-
-module.exports = { mdLinks }; */
