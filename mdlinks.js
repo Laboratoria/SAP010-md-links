@@ -62,15 +62,15 @@ program
           console.log(cliTable.toString());
         } else if (options.stats) {
           const cliTable = new Table({
-            head: ['TOTAL', 'UNIQUE', 'BROKEN'],
-            colWidths: [10, 10, 10],
+            head: ['TOTAL', 'UNIQUE'],
+            colWidths: [10, 10],
             style: {
               head: ['white', 'bold'],
               border: ['cyan'],
             },
           });
 
-          cliTable.push([statistics.total, statistics.unique, statistics.broken]);
+          cliTable.push([statistics.total, statistics.unique]);
           console.log(cliTable.toString());
         } else if (options.validate) {
           const cliTable = new Table({
