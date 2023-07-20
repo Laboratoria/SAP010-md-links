@@ -1,43 +1,35 @@
-/* const chalk = require('chalk');
+#!/usr/bin/env node
+
 const { mdLinks } = require('./md-links.js');
 
-const args = process.argv.slice(2);
-const path = args[0];
+const [, , filePath, ...args] = process.argv;
 
-// Verificando se o argumento --validate ou --stats foi passado na linha de comando
-const options = {
-  validate: args.includes('--validate'),
-  stats: args.includes('--stats'),
-  validateAndStats: args.includes('--validate') && args.includes('--stats'),
-};
+const options = {};
+args.forEach((arg) => {
+  if (arg === '--validate') {
+    options.validate = true;
+  } else if (arg === '--stats') {
+    options.stats = true;
+  }
+});
 
-mdLinks(path, options)
-  .then((results) => {
-    if (options.validateAndStats) {
-      console.log(chalk.green('Total links:', results.length));
-      console.log(chalk.yellow('Unique links:', new Set(results.map((link) => link.href)).size));
-      console.log(chalk.red('Broken links:', results.filter((link) => link.ok === false).length));
-    } else if (options.validate) {
-      results.forEach((link) => {
-        console.log(chalk.yellow('File:', link.file));
-        console.log(chalk.magenta('Text:', link.text));
-        console.log(chalk.cyan('Link:', link.href));
-        console.log(chalk.green('Status HTTP:', link.status));
-        console.log(chalk.green('OK:', link.ok));
-        console.log('¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨');
-      });
-    } else if (options.stats) {
-      console.log(chalk.green('Total links:', results.length));
-      console.log(chalk.yellow('Unique links:', new Set(results.map((link) => link.href)).size));
+mdLinks(filePath, options)
+  .then((links) => {
+    if (options.stats) {
+      console.log(`Total: ${links.length}`);
+      console.log(`Unique: ${new Set(links.map((link) => link.href)).size}`);
+      const brokenLinks = links.filter((link) => !link.ok);
+      console.log(`Broken: ${brokenLinks.length}`);
     } else {
-      results.forEach((link) => {
-        console.log(chalk.yellow('File:', link.file));
-        console.log(chalk.magenta('Text:', link.text));
-        console.log(chalk.cyan('Link:', link.href));
-        console.log('¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨');
+      links.forEach((link) => {
+        if (options.validate) {
+          console.log(`${link.href} ${link.ok ? 'ok' : 'fail'} ${link.status || ''} ${link.text}`);
+        } else {
+          console.log(`${link.href} ${link.text}`);
+        }
       });
     }
   })
   .catch((error) => {
-    console.error(error);
-  }); */
+    console.error('Error:', error.message);
+  });
