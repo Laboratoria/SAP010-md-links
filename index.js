@@ -2,14 +2,14 @@ const fs = require('fs');
 const path = require('path');
 const fetch = require('cross-fetch');
 
-// Função principal para encontrar e processar links em arquivos Markdown.
+
 function mdlinks(file, options) {
-  const filePath = path.resolve(file);
+  const filePath = path.resolve(file); 
   return new Promise((resolve, reject) => {
     fs.stat(filePath, (err, stats) => {
       if (err) {
          if (err.code === 'ENOENT') {
-          reject(`O arquivo ${filePath} não foi encontrado.`);
+          reject(`O arquivo/diretório ${filePath} não foi encontrado no caminho especificado.`);
         } else {
           reject(err);
         } 
@@ -43,7 +43,7 @@ function mdlinks(file, options) {
             .catch((error) => reject(error));
         } else {
           reject(`O ${file} não é um arquivo Markdown.`);
-          console.log(`O ${file} não é um arquivo Markdown.`)
+         /*  console.log(`O ${file} não é um arquivo Markdown.`) */
         }
       }
     });
@@ -148,4 +148,4 @@ function statisticsLinks(links) {
   };
 }
 
-module.exports = { mdlinks, validateLinks, searchRecursion, validateFetch, statisticsLinks };
+module.exports = { mdlinks, validateLinks, searchRecursion,  readMarkdownFile, validateFetch, statisticsLinks };

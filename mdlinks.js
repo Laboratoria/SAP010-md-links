@@ -7,7 +7,7 @@ const Table = require('cli-table3');
 
 const erroChalk = (texto) => chalk.red.italic(texto);
 const okChalk = (texto) => chalk.green.italic(texto);
-const hrefChalk = (texto) => chalk.blue.italic(texto);
+const hrefChalk = (texto) => chalk.cyan.italic(texto);
 const textChalk = (texto) => chalk.green.italic(texto);
 const fileChalk = (texto) => chalk.magenta.italic(texto);
 const statusChalk = (status) => {
@@ -30,14 +30,14 @@ program
     mdlinks(file, options)
       .then(({ links, statistics }) => {
         if (options.validate && options.stats) {
-          const cliTableVali = new Table({
+          /* const cliTableVali = new Table({
             head: ['HREF', 'TEXT', 'FILE', 'STATUS'],
-            colWidths: [35, 35, 20, 15], // Ajustando a largura das colunas para evitar quebras
+            colWidths: [35, 35, 20, 15], 
             style: {
               head: ['white', 'bold'],
               border: ['cyan'],
-              'padding-left': 0, // Removendo o espaço extra à esquerda para diminuir o tamanho da fonte
-              'padding-right': 0, // Removendo o espaço extra à direita para diminuir o tamanho da fonte
+              'padding-left': 0, 
+              'padding-right': 0,
             },
           });
 
@@ -47,10 +47,10 @@ program
             cliTableVali.push([hrefChalk(link.href), textChalk(text), fileChalk(link.file), statusChalk(status + ' => ' + link.status)]);
           });
 
-          console.log(cliTableVali.toString());
+          console.log(cliTableVali.toString()); */
 
           const cliTable = new Table({
-            head: ['STATS', 'UNIQUE', 'BROKEN'],
+            head: ['TOTAL', 'UNIQUE', 'BROKEN'],
             colWidths: [10, 10, 10],
             style: {
               head: ['white', 'bold'],
@@ -62,7 +62,7 @@ program
           console.log(cliTable.toString());
         } else if (options.stats) {
           const cliTable = new Table({
-            head: ['STATS', 'UNIQUE', 'BROKEN'],
+            head: ['TOTAL', 'UNIQUE', 'BROKEN'],
             colWidths: [10, 10, 10],
             style: {
               head: ['white', 'bold'],

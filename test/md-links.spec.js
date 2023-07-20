@@ -1,6 +1,6 @@
 const path = require('path');
 const fetch = require('cross-fetch');
-const { mdlinks, validateFetch, validateLinks, statisticsLinks } = require('../index.js');
+const { mdlinks, validateFetch, statisticsLinks } = require('../index.js');
 
 jest.mock('cross-fetch', () => jest.fn()); // Cria um mock para a função 'fetch' usando o Jest
 
@@ -53,33 +53,52 @@ describe('validateFetch', () => {
 });
 
 describe('mdlinks', () => {
-/*   it('Deve retornar uma mensagem informando que o arquivo não é um Markdown', () => {
-    const file = 'teste.txt';
+ it('Deve retornar uma mensagem informando que o arquivo não foi encontrado', () => {
+    const filePath = 'C:\\Users\\raque\\Documents\\SAP010-md-links\\teste.txt';
 
-    // Chama a função mdlinks com um arquivo que não é um Markdown e verifica se o erro é tratado corretamente
-    return mdlinks(file).catch((reject) => {
-      expect(reject.reject).toEqual(`O ${file} não é um arquivo Markdown.`);
-    });
-  }); */
-
- 
-  it('Deve retornar os links Markdown do arquivo fornecido', () => {
-    const filePath = 'arquivos/teste.md';
-
-    // Define o link Markdown esperado com base no conteúdo do arquivo fornecido
-    const expectedLinks = {
-      text: 'Node.js',
-      href: 'https://nodejs.org/',
-      file: 'teste.md',
-    };
-
-    // Chama a função mdlinks com o arquivo e as opções fornecidas e verifica se os links retornados estão corretos
-    return mdlinks(filePath).then((result) => {
-      expect(result.links[1]).toEqual(expectedLinks);
+  
+    return mdlinks(filePath).catch((reject) => {
+      expect(reject).toEqual(`O arquivo/diretório ${filePath} não foi encontrado no caminho especificado.`);
     });
   });
-});
 
+  it('Deve ler e extrair os links corretamente de um arquivo Markdown', () => {
+    const filePath = 'arquivos/teste.md'; // Substitua com o caminho para um arquivo Markdown
+    const expectedLinks = ({ "file": "teste.md", "href": "https://nodejs.org/", "text": "Node.js" })
+  
+  
+    return mdlinks(filePath).then((result) => {
+      expect(result.links[1]).toEqual(expectedLinks);
+      
+    });
+  });
+
+
+  it('Deve retornar as propriedades de um diretorio valido', () => {
+    const filePath = 'arquivos/';
+    const options = {};
+
+    return mdlinks(filePath, options).then((result) => {
+      expect(result).toHaveProperty('links');
+      
+      result.links.forEach((link) => {
+        expect(link).toHaveProperty('text');
+        expect(link).toHaveProperty('href');
+        expect(link).toHaveProperty('file');
+      });
+    });
+  });
+
+  it('Deve retornar uma mensagem informando que o arquivo não é um Markdown', () => {
+    const file = 'arquivos/teste.txt';
+
+    // Chama a função mdlinks com um arquivo que não é um Markdown e verifica se o erro é tratado corretamente
+    return mdlinks(file).catch((error) => {
+      expect(error).toEqual(`O ${file} não é um arquivo Markdown.`);
+    });
+  });
+
+});
 
 describe('statisticsLinks', () => {
   it('Deve calcular corretamente as estatísticas dos links', () => {
@@ -104,11 +123,11 @@ describe('statisticsLinks', () => {
       },
     ];
 
-    // Chama a função statisticsLinks com os links fornecidos e verifica se as estatísticas retornadas estão corretas
+    // Chama a função mdlinks com os l
     const statistics = statisticsLinks(links);
 
     expect(statistics.total).toBe(3);
     expect(statistics.unique).toBe(3);
     expect(statistics.broken).toBe(1);
   });
-});
+});  
