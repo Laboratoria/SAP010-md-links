@@ -1,3 +1,19 @@
+const { mdLinks } = require('./md-links.js'); // Altere o caminho para o arquivo md-links.js conforme necessário
+
+const filePath = './src/file/file.md'; // Substitua pelo caminho correto do arquivo que deseja analisar
+
+const options = {
+  validate: true, // Substitua por `false` se não quiser validar os links
+};
+
+mdLinks(filePath, options)
+  .then((links) => {
+    console.log(links);
+  })
+  .catch((error) => {
+    console.error('Error:', error.message);
+  });
+
 /* const statsFunction = (arrayLinks) => {
   return new Promise((resolve) => {
     const hrefList = [];
