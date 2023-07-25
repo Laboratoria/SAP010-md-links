@@ -52,30 +52,27 @@ function readAndExtractLinks(filePath) {
 }
 
 function readDirectoryRecursive(directoryPath) {
-  return new Promise((resolve, reject) => {
-    fs.readdir(directoryPath, { withFileTypes: true }, (err, files) => {
-      if (err) {
-        reject(new Error('Erro ao ler o diretório.'));
-        return;
+  try {
+    const files = fs.readdirSync(directoryPath, { withFileTypes: true });
+
+    const filePromises = files.map((file) => {
+      const filePath = path.join(directoryPath, file.name);
+      if (file.isDirectory()) {
+        return readDirectoryRecursive(filePath);
+      } else if (fileMD(filePath)) {
+        return readAndExtractLinks(filePath);
       }
-
-      const filePromises = files.map((file) => {
-        const filePath = path.join(directoryPath, file.name);
-        if (file.isDirectory()) {
-          return readDirectoryRecursive(filePath);
-        } else if (fileMD(filePath)) {
-          return readAndExtractLinks(filePath);
-        }
-        return null;
-      });
-
-      Promise.all(filePromises)
-        .then((results) => {
-          const allLinks = results.filter((links) => links !== null).flat();
-          resolve(allLinks);
-        });
+      return null;
     });
-  });
+
+    const results = Promise.all(filePromises).then((allLinks) => {
+      return allLinks.filter((links) => links !== null).flat();
+    });
+
+    return results;
+  } catch (err) {
+    return Promise.reject(new Error('Erro ao ler o diretório.'));
+  }
 }
 
 function mdLinks(filePath) {
@@ -100,6 +97,9 @@ function mdLinks(filePath) {
         readAndExtractLinks(absolutePath)
           .then((links) => {
             resolve(links);
+          })
+          .catch((error) => {
+            reject(error);
           });
       } else {
         reject(new Error('Caminho do arquivo inválido, a extensão precisa ser ".md"'));

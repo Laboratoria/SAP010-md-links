@@ -15,20 +15,18 @@ const invalidPath = path.resolve(__dirname, 'test-files', 'file-invalid.html');
 // Testes para a função mdLinks
 describe('mdLinks - Caminho inválido', () => {
   test('Rejeita com erro quando o caminho não é um arquivo nem diretório válido', () => {
-    return mdLinks(invalidPath)
-      .catch((error) => {
-        expect(error).toEqual(expect.any(Error));
-        expect(error.message).toEqual('Caminho do arquivo inválido, a extensão precisa ser ".md"');
-      });
+    return mdLinks(invalidPath).catch((error) => {
+      expect(error).toEqual(expect.any(Error));
+      expect(error.message).toEqual('Caminho do arquivo inválido, a extensão precisa ser ".md"');
+    });
   });
 });
 
 describe('mdLinks - Sem links', () => {
   test('Resolve com um array vazio quando nenhum link é encontrado no arquivo', () => {
-    return mdLinks(noLinksPath)
-      .then((links) => {
-        expect(links).toEqual([]);
-      });
+    return mdLinks(noLinksPath).then((links) => {
+      expect(links).toEqual([]);
+    });
   });
 });
 
@@ -39,19 +37,17 @@ describe('mdLinks - Links Corretos', () => {
       { href: 'https://www.google.com', text: 'Google' },
       { href: 'https://developer.mo', text: 'mozilla' },
     ];
-    return mdLinks(linksPath)
-      .then((links) => {
-        expect(links).toEqual(expectedLinks);
-      });
+    return mdLinks(linksPath).then((links) => {
+      expect(links).toEqual(expectedLinks);
+    });
   });
 });
 
 describe('mdLinks - Links Quebrados', () => {
   test('Testar o comportamento quando o arquivo contém links inválidos ou mal formatados.', () => {
-    return mdLinks(linksPath)
-      .catch((error) => {
-        expect(error).toEqual(expect.any(Error));
-      });
+    return mdLinks(linksPath).catch((error) => {
+      expect(error).toEqual(expect.any(Error));
+    });
   });
 });
 
@@ -71,13 +67,12 @@ describe('validateLink', () => {
       text: 'Example',
     };
 
-    return validateLink(link)
-      .then((result) => {
-        expect(result.href).toEqual(link.href);
-        expect(result.text).toEqual(link.text);
-        expect(result.status).toEqual(200);
-        expect(result.ok).toEqual(true);
-      });
+    return validateLink(link).then((result) => {
+      expect(result.href).toEqual(link.href);
+      expect(result.text).toEqual(link.text);
+      expect(result.status).toEqual(200);
+      expect(result.ok).toEqual(true);
+    });
   });
 
   test('Rejeita com erro quando o link é inválido', () => {
@@ -86,13 +81,12 @@ describe('validateLink', () => {
       text: 'Not Found',
     };
 
-    return validateLink(link)
-      .then((result) => {
-        expect(result.href).toEqual(link.href);
-        expect(result.text).toEqual(link.text);
-        expect(result.status).toEqual(404);
-        expect(result.ok).toEqual(false);
-      });
+    return validateLink(link).then((result) => {
+      expect(result.href).toEqual(link.href);
+      expect(result.text).toEqual(link.text);
+      expect(result.status).toEqual(404);
+      expect(result.ok).toEqual(false);
+    });
   });
 });
 
@@ -105,17 +99,15 @@ describe('readAndExtractLinks', () => {
       { href: 'https://developer.mo', text: 'mozilla' },
     ];
 
-    return readAndExtractLinks(linksPath)
-      .then((links) => {
-        expect(links).toEqual(expectedLinks);
-      });
+    return readAndExtractLinks(linksPath).then((links) => {
+      expect(links).toEqual(expectedLinks);
+    });
   });
 
   test('Rejeita com erro quando ocorre um erro na leitura do arquivo', () => {
-    return readAndExtractLinks(invalidPath)
-      .catch((error) => {
-        expect(error).toBeInstanceOf(Error);
-      });
+    return readAndExtractLinks(invalidPath).catch((error) => {
+      expect(error).toBeInstanceOf(Error);
+    });
   });
 });
 
@@ -128,16 +120,14 @@ describe('readDirectoryRecursive', () => {
       { href: 'https://developer.mo', text: 'mozilla' },
     ];
 
-    return readDirectoryRecursive(path.resolve(__dirname, 'test-files'))
-      .then((links) => {
-        expect(links).toEqual(expectedLinks);
-      });
+    return readDirectoryRecursive(path.resolve(__dirname, 'test-files')).then((links) => {
+      expect(links).toEqual(expectedLinks);
+    });
   });
 
   test('Rejeita com erro quando ocorre um erro ao ler o diretório', () => {
-    return readDirectoryRecursive(invalidPath)
-      .catch((error) => {
-        expect(error).toBeInstanceOf(Error);
-      });
+    return readDirectoryRecursive(invalidPath).catch((error) => {
+      expect(error).toBeInstanceOf(Error);
+    });
   });
 });
