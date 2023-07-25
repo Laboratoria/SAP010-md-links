@@ -7,3 +7,7 @@
 [Instagram](https://www.instagram.com/)
 
 [Mozilla](https://developer.mozilla.org/)
+
+[Facebook](https://facebook.c)
+
+[Slack](https://slack.)
