@@ -26,8 +26,8 @@ mdLinks(filePath, options)
       console.log(`Unique: ${new Set(links.map((link) => link.href)).size}`);
     } else if (options.validate) {
       const table = new Table({
-        head: [chalk.magenta('Link'), chalk.magenta('Status'), chalk.magenta('Cod'), chalk.magenta('Text')],
-        colWidths: [40, 10, 10, 40],
+        head: [chalk.magenta('LINK'), chalk.magenta('STATUS'), chalk.magenta('COD'), chalk.magenta('TEXT')],
+        colWidths: [40, 10, 10, 20],
       });
       links.forEach((link) => {
         const linkColor = chalk.gray(link.href);
@@ -45,9 +45,5 @@ mdLinks(filePath, options)
     }
   })
   .catch((error) => {
-    if (error.message === 'Nenhum arquivo encontrado') {
-      console.error('Nenhum arquivo ou diretório encontrado no caminho especificado.');
-    } else {
-      console.error('Error:', error.message);
-    }
+    console.error('Error:', error.message);
   });
