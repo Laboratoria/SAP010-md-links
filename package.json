@@ -1,11 +1,11 @@
 {
-  "name": "md-links",
-  "bin": {
-    "md-links": "cli.js"
-  },
+  "name": "md-links-caroline-vaz",
   "version": "0.1.0",
   "engines": {
     "node": ">=16.x"
+  },
+  "bin": {
+    "md-links": "./src/cli.js"
   },
   "bootcamp": {
     "createdAt": "2023-06-19T12:25:44.680Z",
@@ -93,6 +93,7 @@
     "picocolors": "^1.0.0",
     "picomatch": "^2.3.1",
     "pify": "^4.0.1",
+    "react": "^18.2.0",
     "readdirp": "^3.6.0",
     "regenerate": "^1.4.2",
     "regenerate-unicode-properties": "^10.1.0",
