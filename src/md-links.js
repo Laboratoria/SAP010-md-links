@@ -51,14 +51,14 @@ function readAndExtractLinks(filePath) {
   });
 }
 
-function readDirectoryRecursive(directoryPath) {
+function readDir(directoryPath) {
   try {
     const files = fs.readdirSync(directoryPath, { withFileTypes: true });
 
     const filePromises = files.map((file) => {
       const filePath = path.join(directoryPath, file.name);
       if (file.isDirectory()) {
-        return readDirectoryRecursive(filePath);
+        return readDir(filePath);
       } else if (fileMD(filePath)) {
         return readAndExtractLinks(filePath);
       }
@@ -86,7 +86,7 @@ function mdLinks(filePath) {
       }
 
       if (stats.isDirectory()) {
-        readDirectoryRecursive(absolutePath)
+        readDir(absolutePath)
           .then((links) => {
             resolve(links);
           })
@@ -112,6 +112,6 @@ module.exports = {
   validateLink,
   fileMD,
   readAndExtractLinks,
-  readDirectoryRecursive,
+  readDir,
   mdLinks,
 };

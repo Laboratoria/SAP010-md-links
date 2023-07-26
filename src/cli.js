@@ -16,70 +16,50 @@ args.forEach((arg) => {
 
 mdLinks(filePath)
   .then((links) => {
-    const uniqueLinks = new Set();
-    const duplicateLinks = new Set();
-
     if (options.validate) {
-      const validatePromises = links.map((link) => {
-        if (!uniqueLinks.has(link.href)) {
-          uniqueLinks.add(link.href);
-          return validateLink(link);
-        } else {
-          duplicateLinks.add(link.href);
-          return { ...link, ok: chalk.bold.blue('duplicate') };
-        }
-      });
+      const validatePromises = links.map((link) => validateLink(link));
 
-      return Promise.all(validatePromises)
-        .then((validatedLinks) => {
-          const table = new Table({
-            head: [chalk.bold.magenta('LINK'), chalk.bold.magenta('STATUS'), chalk.bold.magenta('COD'), chalk.bold.magenta('TEXT')],
-            colWidths: [40, 20, 10, 20],
-          });
-
-          validatedLinks.forEach((link) => {
-            const linkColor = chalk.white.bold(link.href);
-            const validateColor = link.ok === true ? chalk.green.bold('OK') : chalk.red.bold(link.ok);
-            const codColor = chalk.gray.bold(link.status || 0);
-            const textColor = chalk.gray.bold(link.text);
-            table.push([linkColor, validateColor, codColor, textColor]);
-          });
-
-          console.log(table.toString());
-
-          if (options.stats) {
-            const brokenLinks = validatedLinks.filter((link) => link.ok === false);
-
-            console.log('|-------------------|');
-            console.log(chalk.white.bold(`  Total: ${validatedLinks.length}`));
-            console.log('|-------------------|');
-            console.log(chalk.green.bold(`  Unique: ${uniqueLinks.size}`));
-            console.log('|-------------------|');
-            console.log(chalk.red.bold(`  Broken: ${brokenLinks.length}`));
-            console.log('|-------------------|');
-            console.log(chalk.blue.bold(`  Duplicate: ${duplicateLinks.size}`));
-            console.log('|-------------------|');
-          }
+      return Promise.all(validatePromises).then((validatedLinks) => {
+        const table = new Table({
+          head: [chalk.bold.magenta('LINK'), chalk.bold.magenta('STATUS'), chalk.bold.magenta('COD'), chalk.bold.magenta('TEXTO')],
+          colWidths: [40, 20, 10, 20],
         });
-    } else if (options.stats) {
-      links.forEach((link) => {
-        if (!uniqueLinks.has(link.href)) {
+
+        const uniqueLinks = new Set();
+        validatedLinks.forEach((link) => {
+          const linkColor = chalk.white.bold(link.href);
+          const validateColor = link.ok === true ? chalk.green.bold('OK') : chalk.red.bold(link.ok);
+          const codColor = chalk.gray.bold(link.status || 0);
+          const textColor = chalk.gray.bold(link.text);
+          table.push([linkColor, validateColor, codColor, textColor]);
           uniqueLinks.add(link.href);
-        } else {
-          duplicateLinks.add(link.href);
+        });
+
+        console.log(table.toString());
+
+        if (options.stats) {
+          const brokenLinks = validatedLinks.filter((link) => link.ok === false);
+
+          console.log('--------------------');
+          console.log(chalk.white.bold(`  Total: ${validatedLinks.length}`));
+          console.log('|-------------------|');
+          console.log(chalk.green.bold(`  Únicos: ${uniqueLinks.size}`));
+          console.log('|-------------------|');
+          console.log(chalk.red.bold(`  Quebrados: ${brokenLinks.length}`));
+          console.log('--------------------');
         }
+        return null;
       });
-      console.log('|-------------------|');
+    } else if (options.stats) {
+      console.log('--------------------');
       console.log(chalk.white.bold(`  Total: ${links.length}`));
       console.log('|-------------------|');
-      console.log(chalk.green.bold(`  Unique: ${uniqueLinks.size}`));
-      console.log('|-------------------|');
-      console.log(chalk.blue.bold(`  Duplicate: ${duplicateLinks.size}`));
-      console.log('|-------------------|');
-      
+      console.log(chalk.green.bold(`  Únicos: ${new Set(links.map((link) => link.href)).size}`));
+      console.log('--------------------');
+      return null;
     } else {
       const table2 = new Table({
-        head: [chalk.magenta('LINK'), chalk.magenta('TEXT')],
+        head: [chalk.magenta('LINK'), chalk.magenta('TEXTO')],
         colWidths: [40, 20],
       });
 
@@ -90,8 +70,9 @@ mdLinks(filePath)
       });
 
       console.log(table2.toString());
+      return null;
     }
   })
   .catch((error) => {
-    console.error('Error:', error.message);
+    console.error('Erro:', error.message);
   });

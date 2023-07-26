@@ -3,7 +3,7 @@ const {
   validateLink,
   fileMD,
   readAndExtractLinks,
-  readDirectoryRecursive,
+  readDir,
   mdLinks,
 } = require('../src/md-links.js');
 
@@ -112,7 +112,7 @@ describe('readAndExtractLinks', () => {
 });
 
 // Teste para diretório
-describe('readDirectoryRecursive', () => {
+describe('readDir', () => {
   test('Traz os links dos arquivos Markdown de um diretório', () => {
     const expectedLinks = [
       { href: 'https://www.example.com', text: 'Example' },
@@ -120,13 +120,13 @@ describe('readDirectoryRecursive', () => {
       { href: 'https://developer.mo', text: 'mozilla' },
     ];
 
-    return readDirectoryRecursive(path.resolve(__dirname, 'test-files')).then((links) => {
+    return readDir(path.resolve(__dirname, 'test-files')).then((links) => {
       expect(links).toEqual(expectedLinks);
     });
   });
 
   test('Rejeita com erro quando ocorre um erro ao ler o diretório', () => {
-    return readDirectoryRecursive(invalidPath).catch((error) => {
+    return readDir(invalidPath).catch((error) => {
       expect(error).toBeInstanceOf(Error);
     });
   });
