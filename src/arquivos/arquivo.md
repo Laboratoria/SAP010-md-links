@@ -4,4 +4,5 @@
 [FreeCodeCamp](https://www.freecodecamp.org/)
 [RegexOne](https://regexone.com/)
 [Learngit](https://learngitbranching.js.org/?locale=pt_BR)
-
+[npm](https://www.npmjssss.com/package/cross-fetch?activeTab=readme)
+[RegexOne](https://regexone.com/)
