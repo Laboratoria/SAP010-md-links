@@ -32,20 +32,24 @@ function getLinksFromFile(path) {
 }
 
 function readDirectory(path) {
-  try {
-    const fileList = fs.readdirSync(path);
+  return new Promise((resolve) => {
+    try {
+      const fileList = fs.readdirSync(path);
+      const filteredList = fileList.filter((file) => path.extname(file) === '.md');
 
-    const filteredList = fileList.filter(
-      (file) => path.extname(file) === '.md',
-    );
+      const promises = filteredList.map((file) => {
+        const filePath = path.join(path, file);
+        return getLinksFromFile(filePath);
+      });
 
-    filteredList.forEach((file) => {
-      const filePath = path.join(path, file);
-      getLinksFromFile(filePath);
-    });
-  } catch (err) {
-    console.error('Erro ao ler diretórios', err);
-  }
+      Promise.all(promises).then(() => {
+        resolve();
+      });
+    } catch (err) {
+      console.error('Erro ao ler diretórios', err);
+      resolve(); // Continuar resolvendo mesmo em caso de erro
+    }
+  });
 }
 
 function mdLinks(path) {
