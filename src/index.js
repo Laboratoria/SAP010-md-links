@@ -6,11 +6,9 @@ function getLinksFromFile(path) {
   return new Promise((resolve, reject) => {
     fs.readFile(path, (err, fileContent) => {
       if (err) {
-        reject(console.error(`Erro ao retornar arquivos: ${err}`));
+        reject(new Error(`Erro ao retornar arquivos: ${err.message}`));
       } else if (!path.endsWith('.md')) {
-        reject(
-          console.error('O caminho de entrada não corresponde a um arquivo .md'),
-        );
+        reject(new Error('O caminho de entrada não corresponde a um arquivo .md'));
       } else {
         const regex = /\[([^[\]]+)\]\(([^()\s]+|\S+)?\)/g;
         const strFiles = fileContent.toString();
@@ -27,7 +25,6 @@ function getLinksFromFile(path) {
           };
           links.push(link);
         });
-
         resolve(links);
       }
     });
@@ -94,4 +91,6 @@ function getHTTPStatus(linksObject) {
 module.exports = {
   mdLinks,
   getHTTPStatus,
+  getLinksFromFile,
+  readDirectory,
 };
