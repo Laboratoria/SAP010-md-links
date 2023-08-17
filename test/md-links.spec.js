@@ -1,4 +1,4 @@
-const {lerArquivos, validateLinks, getStats} = require('../src/index');
+const {lerArquivos, validateLinks, getStats, lerDiretorioMd, mdLinks} = require('../src/index');
 const path = require('path');
 const fs = require('fs');
 
@@ -16,47 +16,34 @@ it ('deve retornar um array com informações quando o arquivo tiver links',() =
     expect(result).toEqual([
       {
         text: 'Google',
-        url: 'https://www.google.com/',
+        url: 'https://www.google.com',
         file: filePath,
       },
       {
-        text: 'MDN Docs',
-        url: 'https://developer.mozilla.org/pt-BR/',
+        text: 'GitHub',
+        url: 'https://github.com',
         file: filePath,
       },
       {
-        text: 'w3 school',
-        url: 'https://www.w3schools.com/',
+        text: 'Laboratoria',
+        url: 'https://www.laboratoria.la/br',
         file: filePath,
       },
       {
-        text: 'FreeCodeCamp',
-        url: 'https://www.freecodecamp.org/',
+        text: 'Teste Link Quebrado',
+        url: 'https://www.xxxxxxxxxlaboratoria.la/br',
         file: filePath,
       },
       {
-        text: 'RegexOne',
-        url: 'https://regexone.com/',
-        file: filePath,
-      },
-      {
-        text: 'Learngit',
-        url: 'https://learngitbranching.js.org/?locale=pt_BR',
-        file: filePath,
-      },
-      {
-        text: 'npm',
-        url: 'https://www.npmjssss.com/package/cross-fetch?activeTab=readme',
-        file: filePath,
-      },
-      {
-        text: 'RegexOne',
-        url: 'https://regexone.com/',
+        text: 'Laboratoria',
+        url: 'https://www.laboratoria.la/br',
         file: filePath,
       },
      ]);
   });
 });
+
+// teste de validar
 
 describe('validateLinks', () => {
   it('deve validar links corretamente', (done) => {
@@ -95,18 +82,16 @@ describe('validateLinks', () => {
     }).catch(done.fail);
   });
 });
+// test stats
 
 describe('getStats', () => {
   it('Mostrar total de links e links únicos quando der o --stats', () => {
     const mockArrayLinks = [
-      { url: 'https://www.google.com/' },
-      { url: 'https://developer.mozilla.org/pt-BR/' },
-      { url: 'https://www.w3schools.com/' },
-      { url: 'https://www.freecodecamp.org/' },
-      { url: 'https://regexone.com/' },
-      { url: 'https://learngitbranching.js.org/?locale=pt_BR' },
-      { url: 'https://www.npmjssss.com/package/cross-fetch?activeTab=readme' },
-      { url: 'https://regexone.com/' },
+      { url: 'https://www.google.com' },
+      { url: 'https://github.com' },
+      { url: 'https://www.laboratoria.la/br' },
+      { url: 'https://www.xxxxxxxxxlaboratoria.la/br' },
+      { url: 'https://www.laboratoria.la/br' },
     ];
 
     const options = {
@@ -115,11 +100,133 @@ describe('getStats', () => {
     };
 
     const result = {
-      totalLinks: 8,
-      uniqueLinks: 7,
+      totalLinks: 5,
+      uniqueLinks: 4,
     };
 
     const res = getStats(mockArrayLinks, options);
     expect(res).toEqual(result);
+  });
+});
+
+describe("lerDiretorioMd", () => {
+  it("deve retornar um array com informações dos links encontrados nos arquivos do diretório", (done) => {
+    const directoryPath = path.resolve(__dirname, "../src/arquivos");
+    const filePath = path.resolve(__dirname, "../src/arquivos/arquivo.md"); 
+
+    const expectedLinks = [
+      {
+        text: 'Google',
+        url: 'https://www.google.com',
+        file: filePath,
+      },
+      {
+        text: 'GitHub',
+        url: 'https://github.com',
+        file: filePath,
+      },
+      {
+        text: 'Laboratoria',
+        url: 'https://www.laboratoria.la/br',
+        file: filePath,
+      },
+      {
+        text: 'Teste Link Quebrado',
+        url: 'https://www.xxxxxxxxxlaboratoria.la/br',
+        file: filePath,
+      },
+      {
+        text: 'Laboratoria',
+        url: 'https://www.laboratoria.la/br',
+        file: filePath,
+      },
+    ];
+
+    lerDiretorioMd(directoryPath)
+      .then((promises) => Promise.all(promises)) 
+      .then((result) => {
+        const flattenedResult = result.flat(); 
+        expect(flattenedResult).toEqual(expectedLinks);
+        done();
+      })
+      .catch((error) => {
+        done(error);
+      });
+  }, 10000); 
+});
+
+describe('mdLinks', () => {
+  const filePath = path.resolve(__dirname, '../src/arquivos/arquivo.md');
+  const invalidFilePath = path.resolve(__dirname, '/caminho/invalido.md');
+  const directoryPath = path.resolve(__dirname, '../src/arquivos');
+
+  it('deve retornar os links de um arquivo individual corretamente', () => {
+    return mdLinks(filePath).then((result) => {
+      // Faça as asserções necessárias para verificar o resultado
+      // Por exemplo, verifique se o resultado é uma array de objetos contendo as propriedades text, url e file
+      expect(Array.isArray(result)).toBe(true);
+      result.forEach((link) => {
+        expect(link).toHaveProperty('text');
+        expect(link).toHaveProperty('url');
+        expect(link).toHaveProperty('file', filePath);
+      });
+    });
+  });
+
+  it('deve retornar um erro quando o arquivo não existe', () => {
+    return mdLinks(invalidFilePath).catch((error) => {
+      expect(error).toContain('Erro:');
+    });
+  });
+
+  it('deve retornar os links de um diretório corretamente', () => {
+    return mdLinks(directoryPath).then((result) => {
+      // Faça as asserções necessárias para verificar o resultado
+    });
+  });
+
+  it('deve retornar os links de um diretório quando opção "validate" é passada', () => {
+    const options = { validate: true };
+
+    return mdLinks(directoryPath, options).then((result) => {
+      // Faça as asserções necessárias para verificar o resultado
+    });
+  });
+
+  it('deve retornar os links de um diretório quando opção "stats" é passada', () => {
+    const options = { stats: true };
+
+    return mdLinks(directoryPath, options).then((result) => {
+      // Faça as asserções necessárias para verificar o resultado
+    });
+  });
+
+  it('deve retornar as estatísticas corretamente quando a opção "stats" é passada', () => {
+    const options = { stats: true };
+
+    return mdLinks(filePath, options).then((result) => {
+      // Verifique se a saída está correta para este arquivo quando a opção "stats" é passada
+      expect(result).toHaveProperty('totalLinks', 5);
+      expect(result).toHaveProperty('uniqueLinks', 4);
+    });
+  });
+
+  it('deve retornar os links de um diretório quando opções "validate" e "stats" são passadas', () => {
+    const options = { validate: true, stats: true };
+
+    return mdLinks(directoryPath, options).then((result) => {
+      // Faça as asserções necessárias para verificar o resultado
+    });
+  });
+
+  it('deve retornar as estatísticas corretamente quando as opções "validate" e "stats" são passadas', () => {
+    const options = { validate: true, stats: true };
+  
+    return mdLinks(filePath, options).then((result) => {
+      // Verifique se a saída está correta para este arquivo quando as opções "validate" e "stats" são passadas
+      expect(result.stats).toHaveProperty('totalLinks', 5);
+      expect(result.stats).toHaveProperty('uniqueLinks', 4);
+      expect(result.stats).toHaveProperty('totalBrokenLinks', 1);
+    });
   });
 });

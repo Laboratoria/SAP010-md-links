@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-
+const fetch = require("cross-fetch");
 
 function lerArquivos(path) {
   return new Promise((resolve, reject) => {
@@ -9,7 +9,7 @@ function lerArquivos(path) {
         console.error(err);
         return reject(`Erro na leitura do arquivo: ${err}`);
       }
-      const linkRegex = /\[([^[\]]+?)\]\((https?:\/\/[^\s?#.]+\S+?)\)/gm;
+      const linkRegex = /\[([^[\]]+?)\]\((https?:\/\/[^\s?#.]+\S+?)\)/gm;                                       
 
       let match;
       const darMatch = [];
@@ -29,10 +29,6 @@ function lerArquivos(path) {
   });
 }
 
-/* Apagar depois que tiver CLI pronta & os console.log
-const caminhoDoArquivo = path.join(__dirname, "arquivos", "arquivo.md");
-lerArquivos(caminhoDoArquivo);*/
-
 function lerDiretorioMd(diretorio) {
   return new Promise((resolve, reject) => {
     fs.readdir(diretorio, (err, data) => {
@@ -45,36 +41,29 @@ function lerDiretorioMd(diretorio) {
         .filter((data) => data.endsWith(".md"))
         .map((data) => lerArquivos(path.join(diretorio, data)));
 
-      //console.log(listaArquivosMd);
+      // console.log(listaArquivosMd);
       resolve(listaArquivosMd);
     });
   });
 }
 
-/*const caminhoDoDiretorio = path.join(__dirname, "arquivos");
-lerDiretorioMd(caminhoDoDiretorio);*/
 function validateLinks(arrayLinks) {
   return Promise.all(
-      arrayLinks.map((link) => {
-          return fetch(link.url)
-              .then((response) => {
-                  return {
-                    ...link,
-                    status : response.status, 
-                    ok: response.ok ? 'ok' : 'fail'
-                  };
-              })
-              .catch(() => {
-                  return {
-                    ...link,
-                    status : 404, 
-                    ok: 'fail'
-                  };
-              });
-      })
+    arrayLinks.map((link) => {
+      return fetch(link.url)
+        .then((response) => {
+          link["status"] = response.status;
+          link["ok"] = response.ok ? "ok" : "fail";
+          return link;
+        })
+        .catch(() => {
+          link["status"] = 404;
+          link["ok"] = "fail";
+          return link;
+        });
+    })
   );
 }
-
 
 function getStats(links) {
   const totalLinks = links.length;
@@ -137,4 +126,4 @@ function mdLinks(path, options) {
   });
 }
 
-module.exports = { mdLinks, lerArquivos, lerDiretorioMd, validateLinks, getStats, mdLinks };
+module.exports = { mdLinks, lerArquivos, validateLinks, getStats, lerDiretorioMd };
