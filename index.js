@@ -18,14 +18,22 @@ function mdLinks(rota) {
   })
 }
 
-mdLinks('teste.text')
+mdLinks('teste.md')
   .then((rotaDoArquivo) => {
-    readFile('teste.text', 'utf8')
-      .then((texto) => {
-        var urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-        return texto.replace(urlRegex, (link) => {
-          console.log([{ href: link }, { text: texto }, { file: rotaDoArquivo }]);
-        })
+    readFile('teste.md', 'utf8')
+      .then((arquivo) => {
+        // var textRegex =  /^[[][\w ]+[.-_, *]+[\]]/gim;
+        // var urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+        const regex = /\[([^\[]+)\]\((.*)\)/gim;
+
+        const myMatch = arquivo.match(regex);
+
+        const singleMatch = /\[([^\[]+)\]\((.*)\)/
+        for (var i = 0; i < myMatch.length; i++) {
+          var text = singleMatch.exec(myMatch[i])
+          console.log([ { href: text[2] }, { text: text[1]}, { file: rotaDoArquivo}])
+        }
+
       })
       .catch((error) => {
         throw error;
