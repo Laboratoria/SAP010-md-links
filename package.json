@@ -1,6 +1,6 @@
 {
-  "name": "md-links",
-  "version": "0.1.0",
+  "name": "jessicazanon-mdlinks",
+  "version": "1.0.0",
   "engines": {
     "node": ">=16.x"
   },
@@ -8,5 +8,34 @@
     "createdAt": "2023-06-19T12:25:44.680Z",
     "version": "6.3.0",
     "commit": "c17498042fc79734cec390e6314cbe810e95bf4c"
+  },
+  "description": "## Índice",
+  "main": "./src/cli.js",
+  "directories": {
+    "test": "test"
+  },
+  "bin": {
+    "mdLinks": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "jest --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesszanon/SAP010-md-links.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jesszanon/SAP010-md-links/issues"
+  },
+  "homepage": "https://github.com/jesszanon/SAP010-md-links#readme",
+  "devDependencies": {
+    "jest": "^29.6.2"
+  },
+  "dependencies": {
+    "cross-fetch": "^4.0.0",
+    "md-links": "^0.1.0"
   }
 }
