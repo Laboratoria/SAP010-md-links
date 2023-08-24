@@ -1,7 +1,10 @@
-// const readFileContent = require('../index');
 const mdLinks = require('../index');
 const readFileContent = require('../index');
-// const path = require('path');
+const axios = require('axios');
+const validateLinks = require('../index');
+
+jest.mock('axios');
+
 
 describe('testes da função mdLinks', () => {
   test('a função mdLinks deve resolver uma array de objetos', async () => {
@@ -37,5 +40,78 @@ describe('testes da função readFileContent', () => {
     return readFileContent(emptyFile).catch(error => {
       expect(error.message).toBe('O arquivo está vazio');
     });
+  });
+})
+
+describe('testes do axios', () => {
+  test('resolve do axios', async () => {
+    axios.head.mockResolvedValue({
+      data: [
+        {
+          href: 'https://linkquebrado.com',
+          texto: 'ss836ddgu',
+          file: 'C:\\Users\\Janio\\SAP010-md-links\\teste.md',
+          status: 'N/A',
+          ok: 'fail'
+        },
+        {
+          href: 'https://github.com/markedjs/marked',
+          texto: 'marked',
+          file: 'C:\\Users\\Janio\\SAP010-md-links\\teste.md',
+          status: 200,
+          ok: 'ok'
+        }
+      ]
+    })
+
+    const result = await validateLinks('teste.md', true);
+    expect(result).toEqual(
+      [{
+        "file": "C:\\Users\\Janio\\SAP010-md-links\\teste.md",
+        "href": "https://github.com/markedjs/marked",
+        "ok": "fail",
+        "status": undefined,
+        "texto": "marked"
+      },
+      {
+        "file": "C:\\Users\\Janio\\SAP010-md-links\\teste.md",
+        "href": "https://linkquebrado.com",
+        "ok": "fail",
+        "status": undefined,
+        "texto": "ss836ddgu"
+      }]);
+  });
+
+  test('reject do axios', async () => {
+    axios.head.mockRejectedValue({
+      data: [
+        {
+          href: 'https://linkquebrado.com',
+          texto: 'ss836ddgu',
+          file: 'C:\\Users\\Janio\\SAP010-md-links\\teste.md'
+        },
+        {
+          href: 'https://github.com/markedjs/marked',
+          texto: 'marked',
+          file: 'C:\\Users\\Janio\\SAP010-md-links\\teste.md',
+        }
+      ]
+    })
+
+    const result = await validateLinks('teste.md', true);
+    expect(result).toEqual([{
+      "file": "C:\\Users\\Janio\\SAP010-md-links\\teste.md",
+      "href": "https://github.com/markedjs/marked",
+      "ok": "fail",
+      "status": "N/A",
+      "texto": "marked"
+    },
+    {
+      "file": "C:\\Users\\Janio\\SAP010-md-links\\teste.md",
+      "href": "https://linkquebrado.com",
+      "ok": "fail",
+      "status": "N/A",
+      "texto": "ss836ddgu"
+    }])
   });
 })
