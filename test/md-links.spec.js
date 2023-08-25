@@ -1,10 +1,9 @@
-const mdLinks = require('../index');
-const readFileContent = require('../index');
+const { mdLinks } = require('../index');
+const { readFileContent } = require('../index');
 const axios = require('axios');
-const validateLinks = require('../index');
+const { validateLinks } = require('../index');
 
 jest.mock('axios');
-
 
 describe('testes da função mdLinks', () => {
   test('a função mdLinks deve resolver uma array de objetos', async () => {
@@ -19,7 +18,7 @@ describe('testes da função mdLinks', () => {
     expect(readFileContent).toHaveBeenCalledTimes(1);
   });
 
-  test('deve rejeitar se o arquivo estiver vazio', async () => {
+  test('deve rejeitar se o arquivo não existir', async () => {
     const fakeFile = 'arquivoinexist.md';
     return mdLinks(fakeFile).catch(error => {
       expect(error.message).toBe('Este arquivo não existe');
@@ -30,6 +29,13 @@ describe('testes da função mdLinks', () => {
     const fakeMdFile = 'index.js';
     return mdLinks(fakeMdFile).catch(error => {
       expect(error.message).toBe('O arquivo não é um arquivo markdown');
+    });
+  });
+
+  test('deve rejeitar o arquivo se for vazio', async () => {
+    const emptyFile = 'empty.md';
+    return mdLinks(emptyFile).catch(error => {
+      expect(error.message).toBe('O arquivo está vazio');
     });
   });
 })
@@ -66,20 +72,8 @@ describe('testes do axios', () => {
 
     const result = await validateLinks('teste.md', true);
     expect(result).toEqual(
-      [{
-        "file": "C:\\Users\\Janio\\SAP010-md-links\\teste.md",
-        "href": "https://github.com/markedjs/marked",
-        "ok": "fail",
-        "status": undefined,
-        "texto": "marked"
-      },
-      {
-        "file": "C:\\Users\\Janio\\SAP010-md-links\\teste.md",
-        "href": "https://linkquebrado.com",
-        "ok": "fail",
-        "status": undefined,
-        "texto": "ss836ddgu"
-      }]);
+      { "ok": "fail", "status": undefined }
+    );
   });
 
   test('reject do axios', async () => {
@@ -99,19 +93,41 @@ describe('testes do axios', () => {
     })
 
     const result = await validateLinks('teste.md', true);
-    expect(result).toEqual([{
-      "file": "C:\\Users\\Janio\\SAP010-md-links\\teste.md",
-      "href": "https://github.com/markedjs/marked",
-      "ok": "fail",
-      "status": "N/A",
-      "texto": "marked"
-    },
-    {
-      "file": "C:\\Users\\Janio\\SAP010-md-links\\teste.md",
-      "href": "https://linkquebrado.com",
-      "ok": "fail",
-      "status": "N/A",
-      "texto": "ss836ddgu"
-    }])
+    expect(result).toEqual(
+      { "ok": "fail", "status": 404 }
+    )
   });
+})
+
+describe('testes do validateLinks', () => {
+  test('resolve do validateLinks', async () => {
+    const response = {
+      status: 200,
+      ok: 'ok'
+    };
+
+    axios.head = jest.fn().mockResolvedValue(response);
+
+    const result = await mdLinks('teste.md', true);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].status).toBe(200);
+    expect(result[0].ok).toBe('ok');
+  });
+
+  test('reject do validateLinks', async () => {
+    const error = {
+      response: {
+        status: 404
+      }
+    };
+
+    axios.head = jest.fn().mockRejectedValue(error);
+
+    const result = await mdLinks('teste.md', true);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].status).toBe(404);
+    expect(result[0].ok).toBe('fail');
+  })
 })

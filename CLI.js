@@ -1,4 +1,4 @@
-const mdLinks = require("./index");
+const { mdLinks } = require("./index");
 
 const validate = true;
 

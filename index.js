@@ -17,7 +17,7 @@ function validateLinks(href) {
     })
     .catch(error => {
       return {
-        status: error.response ? error.response.status : 'N/A',
+        status: error.response ? error.response.status : 404,
         ok: 'fail'
       };
     });
@@ -72,11 +72,6 @@ function mdLinks(rota, validate = false) {
                   resolve(array);
                 }
               })
-              .catch(() => {
-                if (array.length === myMatch.length) {
-                  resolve(array);
-                }
-              });
           } else {
             array.push(linkObj);
             if (array.length === myMatch.length) {
@@ -91,4 +86,4 @@ function mdLinks(rota, validate = false) {
   })
 }
 
-module.exports = mdLinks, readFileContent, validateLinks;
+module.exports = { mdLinks, readFileContent, validateLinks };
