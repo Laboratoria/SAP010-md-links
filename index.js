@@ -17,73 +17,100 @@ function validateLinks(href) {
     })
     .catch(error => {
       return {
-        status: error.response ? error.response.status : 404,
+        status: error.response ? error.response.status : 'N/A',
         ok: 'fail'
       };
     });
 }
 
+function readMdFilesInDirectory(dirPath) {
+  try {
+    const dirContent = fs.readdirSync(dirPath);
+    const mdFiles = dirContent.filter(item => {
+      const itemPath = path.join(dirPath, item);
+      const stats = fs.statSync(itemPath);
+      return stats.isFile() && ['.md', '.mkd', '.mdwn', '.mdown', '.mdtxt', '.mdtext', '.markdown', '.text'];
+    });
+    return mdFiles;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+function readAndValidateLinksInFile(fileContent, filePath, validate) {
+
+  const regex = /\[([^\[]+)\]\((.*)\)/gim;
+
+  const myMatch = fileContent.match(regex);
+
+  if (myMatch === null) {
+    return [];
+  }
+
+  const singleMatch = /\[([^\[]+)\]\((.*)\)/;
+
+  const rota = path.resolve(filePath);
+
+  const validateLinkPromises = myMatch.map(match => {
+    const text = singleMatch.exec(match);
+    const linkObj = { href: text[2], texto: text[1], file: rota };
+
+    if (validate) {
+      return validateLinks(text[2])
+        .then(validation => {
+          linkObj.status = validation.status;
+          linkObj.ok = validation.ok;
+          return linkObj;
+        })
+    } else {
+      return Promise.resolve(linkObj);
+    }
+  });
+
+  return Promise.all(validateLinkPromises);
+}
+
 function mdLinks(rota, validate = false) {
   return new Promise((resolve, reject) => {
+
     if (!fs.existsSync(rota)) {
-      reject(new Error('Este arquivo não existe'));
+      reject(new Error('Arquivo/diretório não encontrado'));
     }
 
-    const mdExtensions = ['.md', '.mkd', '.mdwn', '.mdown', '.mdtxt', '.mdtext', '.markdown', 'text'];
-    const fileExtension = path.extname(rota);
+    const stats = fs.statSync(rota);
 
-    if (!mdExtensions.includes(fileExtension)) {
-      reject(new Error('O arquivo não é um arquivo markdown'));
+    if (stats.isFile()) {
+      const fileExtension = path.extname(rota);
+      const mdExtensions = ['.md', '.mkd', '.mdwn', '.mdown', '.mdtxt', '.mdtext', '.markdown', 'text'];
+      if (!mdExtensions.includes(fileExtension)) {
+        reject(new Error('O arquivo não é um arquivo markdown'));
+      }
+
+      readFileContent(rota)
+        .then(file => readAndValidateLinksInFile(file, rota, validate))
+        .then(links => resolve(links))
+        .catch((error) => {
+          reject(error);
+        })
+    } else {
+      const mdFiles = readMdFilesInDirectory(rota);
+      const allLinksPromises = mdFiles.map(file => {
+        const filePath = path.join(rota, file);
+        return readFileContent(filePath)
+          .then(fileContent => readAndValidateLinksInFile(fileContent, filePath, validate))
+      })
+      Promise.all(allLinksPromises)
+        .then((allLinks) => {
+          resolve(allLinks.flat());
+        })
+        .catch((error) => {
+          reject(error);
+        })
     }
-
-    readFileContent(rota)
-      .then((file) => {
-
-        if (file.trim() === '') {
-          reject(new Error('O arquivo está vazio'));
-        }
-
-        const regex = /\[([^\[]+)\]\((.*)\)/gim;
-
-        const filePath = path.resolve(rota);
-
-        const myMatch = file.match(regex);
-
-        if (myMatch === null) {
-          resolve('Nenhum link encontrado');
-          return;
-        }
-
-        let array = [];
-
-        const singleMatch = /\[([^\[]+)\]\((.*)\)/;
-        for (let i = 0; i < myMatch.length; i++) {
-          let text = singleMatch.exec(myMatch[i])
-          let linkObj = { href: text[2], texto: text[1], file: filePath };
-
-          if (validate) {
-            validateLinks(text[2])
-              .then(validation => {
-                linkObj.status = validation.status;
-                linkObj.ok = validation.ok;
-                array.push(linkObj);
-
-                if (array.length === myMatch.length) {
-                  resolve(array);
-                }
-              })
-          } else {
-            array.push(linkObj);
-            if (array.length === myMatch.length) {
-              resolve(array);
-            }
-          }
-        }
-      })
-      .catch((error) => {
-        reject(error);
-      })
   })
 }
 
-module.exports = { mdLinks, readFileContent, validateLinks };
+module.exports = { mdLinks, readFileContent, validateLinks, readMdFilesInDirectory, readAndValidateLinksInFile };
+
+// fazer uma função para ler arquivos md e chamar readFilecontent
+// fazer uma função para ler diretórios e talvez chamar readFileContent

@@ -2,6 +2,7 @@ const { mdLinks } = require('../index');
 const { readFileContent } = require('../index');
 const axios = require('axios');
 const { validateLinks } = require('../index');
+const { readMdFilesInDirectory } = require('../index');
 
 jest.mock('axios');
 
@@ -18,10 +19,10 @@ describe('testes da função mdLinks', () => {
     expect(readFileContent).toHaveBeenCalledTimes(1);
   });
 
-  test('deve rejeitar se o arquivo não existir', async () => {
+  test('deve rejeitar se o arquivo/diretório não existir', async () => {
     const fakeFile = 'arquivoinexist.md';
     return mdLinks(fakeFile).catch(error => {
-      expect(error.message).toBe('Este arquivo não existe');
+      expect(error.message).toBe('Arquivo/diretório não encontrado');
     });
   });
 
@@ -33,7 +34,7 @@ describe('testes da função mdLinks', () => {
   });
 
   test('deve rejeitar o arquivo se for vazio', async () => {
-    const emptyFile = 'empty.md';
+    const emptyFile = 'emptyfile.md';
     return mdLinks(emptyFile).catch(error => {
       expect(error.message).toBe('O arquivo está vazio');
     });
@@ -42,7 +43,7 @@ describe('testes da função mdLinks', () => {
 
 describe('testes da função readFileContent', () => {
   test('deve rejeitar o arquivo vazio', async () => {
-    const emptyFile = 'empty.md';
+    const emptyFile = 'emptyfile.md';
     return readFileContent(emptyFile).catch(error => {
       expect(error.message).toBe('O arquivo está vazio');
     });
@@ -94,7 +95,7 @@ describe('testes do axios', () => {
 
     const result = await validateLinks('teste.md', true);
     expect(result).toEqual(
-      { "ok": "fail", "status": 404 }
+      { "ok": "fail", "status": 'N/A' }
     )
   });
 })
@@ -129,5 +130,14 @@ describe('testes do validateLinks', () => {
     expect(result).toHaveLength(2);
     expect(result[0].status).toBe(404);
     expect(result[0].ok).toBe('fail');
+  })
+})
+
+describe('testes do readMdFilesInDirectory', () => {
+  test('deve retornar uma array de arquivos md', () => {
+    const result = readMdFilesInDirectory('arquivos-md', true);
+    expect(result).toEqual(
+      [ 'outroslinks.md', 'texto.md' ]
+    );
   })
 })
