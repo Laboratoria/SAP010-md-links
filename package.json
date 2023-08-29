@@ -1,6 +1,9 @@
 {
-  "name": "md-links",
+  "name": "md-links-vitoria",
+  "description": "Localização, extração e verificação de markdown links",
+  "author": "Vitória Victor <vitoriavictor@gmail.com> (https://github.com/vitoriavictor)",
   "version": "0.1.0",
+  "main": "./src/cli.js",
   "engines": {
     "node": ">=16.x"
   },
@@ -8,5 +11,21 @@
     "createdAt": "2023-06-19T12:25:44.680Z",
     "version": "6.3.0",
     "commit": "c17498042fc79734cec390e6314cbe810e95bf4c"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/cli": "^7.22.10",
+    "@babel/core": "^7.22.10",
+    "@babel/preset-env": "^7.22.10",
+    "markdown": "^0.5.0"
+  },
+  "devDependencies": {}
 }
