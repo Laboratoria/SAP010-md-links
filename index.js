@@ -3,7 +3,7 @@ const fsPromise = require('fs').promises;
 const fs = require('fs');
 const axios = require('axios');
 
-function readFileContent(rota) {
+function readMdFiles(rota) {
   return fsPromise.readFile(rota, 'utf-8');
 }
 
@@ -37,7 +37,7 @@ function readMdFilesInDirectory(dirPath) {
   }
 }
 
-function readAndValidateLinksInFile(fileContent, filePath, validate) {
+function readLinksInFile(fileContent, filePath, validate) {
 
   const regex = /\[([^\[]+)\]\((.*)\)/gim;
 
@@ -66,7 +66,6 @@ function readAndValidateLinksInFile(fileContent, filePath, validate) {
       return Promise.resolve(linkObj);
     }
   });
-
   return Promise.all(validateLinkPromises);
 }
 
@@ -86,8 +85,8 @@ function mdLinks(rota, validate = false) {
         reject(new Error('O arquivo não é um arquivo markdown'));
       }
 
-      readFileContent(rota)
-        .then(file => readAndValidateLinksInFile(file, rota, validate))
+      readMdFiles(rota)
+        .then(file => readLinksInFile(file, rota, validate))
         .then(links => resolve(links))
         .catch((error) => {
           reject(error);
@@ -96,8 +95,8 @@ function mdLinks(rota, validate = false) {
       const mdFiles = readMdFilesInDirectory(rota);
       const allLinksPromises = mdFiles.map(file => {
         const filePath = path.join(rota, file);
-        return readFileContent(filePath)
-          .then(fileContent => readAndValidateLinksInFile(fileContent, filePath, validate))
+        return readMdFiles(filePath)
+          .then(fileContent => readLinksInFile(fileContent, filePath, validate))
       })
       Promise.all(allLinksPromises)
         .then((allLinks) => {
@@ -110,7 +109,7 @@ function mdLinks(rota, validate = false) {
   })
 }
 
-module.exports = { mdLinks, readFileContent, validateLinks, readMdFilesInDirectory, readAndValidateLinksInFile };
+module.exports = { mdLinks, readMdFiles, validateLinks, readMdFilesInDirectory, readLinksInFile };
 
 // fazer uma função para ler arquivos md e chamar readFilecontent
 // fazer uma função para ler diretórios e talvez chamar readFileContent
