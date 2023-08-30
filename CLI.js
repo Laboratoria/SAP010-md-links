@@ -10,8 +10,6 @@ let options = {
   stats: args.includes('--stats')
 };
 
-console.log('options', options)
-
 mdLinks(filePath, options)
   .then((links) => {
     if (options.stats && options.validate) {
@@ -28,10 +26,13 @@ mdLinks(filePath, options)
       };
       console.log(`Total: ${stats.total}\nUnique: ${stats.unique}`);
     } else if (options.validate) {
-      console.log(links);
+      links.forEach(link => {
+        console.log(`\nhref: ${link.href}\ntext: ${link.texto}\nfile: ${link.file}\nstatus: ${link.status}\nok: ${link.ok}\n-----------------------------------------`);
+      })
     } else {
-      options.validate = false;
-      console.log(links);
+      links.forEach(link => {
+        console.log(`\nhref: ${link.href}\ntext: ${link.texto}\nfile: ${link.file}\n-----------------------------------------`);
+      })
     }
   })
   .catch((error) => {

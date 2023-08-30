@@ -44,7 +44,7 @@ function readLinksInFile(fileContent, filePath, validate) {
   const myMatch = fileContent.match(regex);
 
   if (myMatch === null) {
-    return [];
+    throw new Error('Nenhum link encontrado no arquivo.');
   }
 
   const singleMatch = /\[([^\[]+)\]\((.*)\)/;
@@ -69,7 +69,8 @@ function readLinksInFile(fileContent, filePath, validate) {
   return Promise.all(validateLinkPromises);
 }
 
-function mdLinks(rota, validate = false) {
+function mdLinks(rota, options = { validate: false }) {
+  const validate = options.validate;
   return new Promise((resolve, reject) => {
 
     if (!fs.existsSync(rota)) {
@@ -89,7 +90,9 @@ function mdLinks(rota, validate = false) {
         .then(file => readLinksInFile(file, rota, validate))
         .then(links => resolve(links))
         .catch((error) => {
-          reject(error);
+          if (error.message === 'Nenhum link encontrado no arquivo.') {
+            reject(new Error('O arquivo não contém links.'));
+          }
         })
     } else {
       const mdFiles = readMdFilesInDirectory(rota);
@@ -97,6 +100,13 @@ function mdLinks(rota, validate = false) {
         const filePath = path.join(rota, file);
         return readMdFiles(filePath)
           .then(fileContent => readLinksInFile(fileContent, filePath, validate))
+          .catch((error) => {
+            if (error.message === "Nenhum link encontrado no arquivo.") {
+              return [];
+            } else {
+              throw error;
+            }
+          })
       })
       Promise.all(allLinksPromises)
         .then((allLinks) => {

@@ -109,7 +109,9 @@ describe('testes do validateLinks', () => {
 
     axios.head = jest.fn().mockResolvedValue(response);
 
-    const result = await mdLinks('teste.md', true);
+    const option = { validate: true }
+
+    const result = await mdLinks('teste.md', option);
 
     expect(result).toHaveLength(3);
     expect(result[0].status).toBe(200);
@@ -125,7 +127,9 @@ describe('testes do validateLinks', () => {
 
     axios.head = jest.fn().mockRejectedValue(error);
 
-    const result = await mdLinks('teste.md', true);
+    const option = { validate: true }
+
+    const result = await mdLinks('teste.md', option);
 
     expect(result).toHaveLength(3);
     expect(result[0].status).toBe(404);
