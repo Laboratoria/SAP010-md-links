@@ -26,14 +26,26 @@ function validateLinks(href) {
 function readMdFilesInDirectory(dirPath) {
   try {
     const dirContent = fs.readdirSync(dirPath);
-    const mdFiles = dirContent.filter(item => {
+    const mdFiles = [];
+    const subDir = [];
+
+    dirContent.forEach(item => {
       const itemPath = path.join(dirPath, item);
-      const stats = fs.statSync(itemPath);
-      return stats.isFile() && ['.md', '.mkd', '.mdwn', '.mdown', '.mdtxt', '.mdtext', '.markdown', '.text'];
+      const itemStats = fs.statSync(itemPath);
+
+      if (itemStats.isFile() && ['.md', '.mkd', '.mdwn', '.mdown', '.mdtxt', '.mdtext', '.markdown', '.text'].includes(path.extname(itemPath))) {
+        mdFiles.push(itemPath);
+      } else if (itemStats.isDirectory()) {
+         subDir.push(itemPath);
+      }
     });
-    return mdFiles;
+
+    const subMdFiles = subDir.flatMap(subdir => readMdFilesInDirectory(subdir));
+
+    return [...mdFiles, ...subMdFiles];
   } catch (error) {
     console.log(error);
+    return [];
   }
 }
 
@@ -97,7 +109,7 @@ function mdLinks(rota, options = { validate: false }) {
     } else {
       const mdFiles = readMdFilesInDirectory(rota);
       const allLinksPromises = mdFiles.map(file => {
-        const filePath = path.join(rota, file);
+        const filePath = path.join(file);
         return readMdFiles(filePath)
           .then(fileContent => readLinksInFile(fileContent, filePath, validate))
           .catch((error) => {
