@@ -1,16 +1,23 @@
 {
   "name": "md-links-vitoria",
   "description": "Localização, extração e verificação de markdown links",
-  "author": "Vitória Victor <vitoriavictor@gmail.com> (https://github.com/vitoriavictor)",
+  "author": "Vitória Victor - Bootcamp Laboratória",
   "version": "0.1.0",
-  "main": "./src/cli.js",
+  "main": "cli.js",
   "engines": {
     "node": ">=16.x"
+  },
+  "bin": {
+    "md-links": "./src/cli.js"
   },
   "bootcamp": {
     "createdAt": "2023-06-19T12:25:44.680Z",
     "version": "6.3.0",
     "commit": "c17498042fc79734cec390e6314cbe810e95bf4c"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vitoriavictor/SAP010-md-links"
   },
   "directories": {
     "test": "test"
@@ -18,14 +25,26 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "markdown",
+    "links",
+    "extractor",
+    "utility",
+    "node.js"
+  ],
   "license": "ISC",
   "dependencies": {
     "@babel/cli": "^7.22.10",
     "@babel/core": "^7.22.10",
     "@babel/preset-env": "^7.22.10",
+    "axios": "^1.5.0",
     "markdown": "^0.5.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "axios-mock-adapter": "^1.21.5",
+    "eslint": "^8.48.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.28.1",
+    "mock-fs": "^5.2.0"
+  }
 }

@@ -1,7 +1,6 @@
 const fs = require("fs").promises; // módulo arquivos
 const path = require("path"); // módulo caminhos
-
-//const markdownLinkExtractor = require("markdown-link-extractor"); // para extrair links de markdown
+const axios = require("axios"); //módulo para testar links HTTP
 
 //const chalk = require("chalk"); // módulo personalização cores
 
@@ -30,17 +29,17 @@ const path = require("path"); // módulo caminhos
 //IMPORTAR ARQUIVO MDLINK//
 
 //const mdLinks = require("./src/files/links-to-check.md");
-mdLinks("./src/files/links-to-check.md")
 //mdLinks("./src/files/dir-files")
 //mdLinks("./src/files/empty-no-links.md")
+mdLinks("./src/files/links-to-check.md", true)
   .then(links => {
     console.log(links);
   })
   .catch(console.error);
 
-  //CONSTRUIR FUNÇÃO PARA MARKDOWN //
+//CONSTRUIR FUNÇÃO PARA MARKDOWN - ler arquivo e extrair link //
 
-function readLinksMarkdown(filePath) {
+/* function readFileMarkdown(filePath) {
   return fs.readFile(filePath, 'utf-8')
     .then((content) => {
       const regex = /\[([^\]]+)\]\((http[s]?:\/\/[^\)]+)\)/g;
@@ -57,72 +56,129 @@ function readLinksMarkdown(filePath) {
     .catch((error) => {
       throw new Error(`Erro ao processar o arquivo: ${error.message}`);
     });
+} */
+
+function readFileMarkdown(content, filePath) {
+  const regex = /\[([^\]]+)\]\((http[s]?:\/\/[^\)]+)\)/g;
+  const links = [];
+  let match = regex.exec(content);
+
+  while (match !== null) {
+    const [, text, href] = match;
+    links.push({ href, text, file: filePath });
+    match = regex.exec(content);
+  }
+  return links;
 }
 
 //CONSTRUIR FUNÇÃO PARA DIRETÓRIO //
 
-/* function findInDirectory(directoryPath){
-  return fs.readdir(directoryPath, (err, data))
-    .then((filesDir) => {
-      const markdownFile = filesDir.filter(file => path.extname(file) === '.md');
-      const promises = markdownFile.map(markdown => {
-        const filePath = path.join(directoryPath, markdown);
-        return readLinksMarkdown(filePath);
+function readDirectoryMd(directoryPath) {
+  return fs.readdir(directoryPath)
+    .then(files => {
+      const filePromises = files.map(file => {
+        const fullPath = path.join(directoryPath, file);
+        return fs.stat(fullPath)
+          .then(stats => {
+            if (stats.isDirectory()) {
+              return readDirectoryMd(fullPath);
+            } else if (['.md', '.mkd', '.mdwn', '.mdown', '.mdtxt', '.mdtext', '.markdown', '.text'].includes(path.extname(file))) {
+              return readFileMarkdown(fullPath);
+            }
+            return [];
+          });
       });
-      return Promise.all(promises)
-        .then(linksArrays => linksArrays.reduce((accumulator, links) => accumulator.concat(links), []));
 
-    })
-} */
+      return Promise.all(filePromises)
+        .then(fileLinks => fileLinks.flat());
+    });
+}
 
+// CONSTRUIR FUNÇÃO VALIDAR //
 
+function validateLinkFile(link) {
+  return axios.head(link.href)
+    .then(response => ({
+      ...link,
+      status: response.status,
+      ok: response.status >= 200 && response.status < 400 ? 'ok' : 'fail',
+    }))
+    .catch(error => ({
+      ...link,
+      status: error.response ? error.response.status : 'N/A',
+      ok: 'fail',
+    }));
+}
 
-// CONSTRUIR FUNÇÃO MD LINKS
+// FUNÇÃO PARA VALIDAR LINKS //
+function validateMarkdownLinks(links) {
+  const linkPromises = links.map(link => validateLinkFile(link));
+  return Promise.all(linkPromises)
+    .then(validatedLinks => validatedLinks)
+    .catch(error => {
+      throw new Error(`Erro ao validar links: ${error.message}`);
+    });
+}
 
-function mdLinks(filePath) {
+// CONSTRUIR FUNÇÃO PEGAR STATUS //
+
+// CONSTRUIR FUNÇÃO MD LINKS //
+
+function mdLinks(filePath, validate = false) {
   const absolutePath = path.resolve(filePath);
 
   return new Promise((resolve, reject) => {
-
     fs.stat(absolutePath)
       .then(stats => {
-        if (stats.isFile()) {
-          return fs.readFile(absolutePath, 'utf-8')
-          //aqui pegar função para ler markdown
-            .then(content => readLinksMarkdown(absolutePath))
-            .then(resolve)
+        if (stats.isDirectory()) {
+          // Colocar aqui função para ler arquivos de diretório
+          return readDirectoryMd(absolutePath)
+            .then((links) => {
+              if (validate) {
+                return validateMarkdownLinks(links);
+              } else {
+                resolve(links);
+              }
+            })
             .catch(reject);
-        } else if (stats.isDirectory()) {
-          //colocar aqui função para diretorio
-
+        } else if (stats.isFile() && ['.md', '.mkd', '.mdwn', '.mdown', '.mdtxt', '.mdtext', '.markdown', '.text'].includes(path.extname(absolutePath))) {
+          return fs.readFile(absolutePath, 'utf-8')
+            .then((content) => {
+              const links = readFileMarkdown(content, absolutePath);
+              if (validate) {
+                return validateMarkdownLinks(links);
+              } else {
+                resolve(links);
+              }
+            })
+            .catch(reject);
+        } else {
+          reject(new Error('O arquivo não é um diretório nem um arquivo Markdown.'));
         }
       })
       .catch(error => {
-        throw new Error(`Erro: ${error.message}`);
+        reject(new Error(`Erro: ${error.message}`));
       });
   });
 }
 
+//função MD LINKS ANTES DE DIRETORIO
 
+/* function mdLinks(filePath) {
+  const absolutePath = path.resolve(filePath);
 
-
-/* function mdLinks() {
   return new Promise((resolve, reject) => {
-    const relativePath = './src/files/links-to-check.md';
-    const absolutePath = path.resolve(relativePath); 
-    //const absolutePath = path.resolve(filePath);
-
     fs.stat(absolutePath)
       .then(stats => {
         if (stats.isFile()) {
           return fs.readFile(absolutePath, 'utf-8')
+            //aqui pegar função para ler markdown
+            .then(content => readFileMarkdown(absolutePath))
             .then(resolve)
             .catch(reject);
         } else if (stats.isDirectory()) {
-          return findDirectory(absolutePath)
-            .then(resolve)
-            .catch(reject);
-        }
+
+}
       })
       .catch(error => {
         throw new Error(`Erro: ${error.message}`);
@@ -130,83 +186,6 @@ function mdLinks(filePath) {
   });
 } */
 
-/* const mdLinks = new Promise((resolve, reject) => {
-  const link = "x";
-
-  if (link === "x") {
-    const relativePath = './src/files/links-to-check.md';
-    const absolutePath = path.resolve(relativePath); 
-    // Caminho relativo para absoluto
-    // Verificar se o arquivo existe
-
-    fs.access(absolutePath, fs.constants.F_OK, (err) => {
-      if (err) {
-        reject("O arquivo não existe");
-      } else {
-        resolve(absolutePath);
-      }
-    });
-  } else {
-    reject("Não tem link");
-  }
-});
-
-mdLinks.then((data) => {
-  console.log("Caminho absoluto:", data);
-}).catch((error) => {
-  console.error("Erro:", error);
-}); */
-
-
-/* const mdLinks = require("md-links");
-
-mdLinks("./src/files/links-to-check.md")
-  .then(links => {
-    // => [{ href, text, file }, ...]
-    console.log("mdLinks");
-  })
-  .catch(console.error);
-
-  const mdLinks = require("md-links");
-
-  mdLinks("./src/files/links-to-check.md")
-    .then(links => {
-      // => [{ href, text, file }, ...]
-      console.log("mdLinks");
-    })
-    .catch(console.error);
-
-
-
-  // LER ARQUIVO
-
-/*   import { open, close, fstat } from 'node:fs';
-
-function closeFd(fd) {
-  close(fd, (err) => {
-    if (err) throw err;
-  });
-}
-
-open('/open/some/file.txt', 'r', (err, fd) => {
-  if (err) throw err;
-  try {
-    fstat(fd, (err, stat) => {
-      if (err) {
-        closeFd(fd);
-        throw err;
-      }
-
-      // use stat
-
-      closeFd(fd);
-    });
-  } catch (err) {
-    closeFd(fd);
-    throw err;
-  }
-}); */
-
 module.exports = {
-  mdLinks, readLinksMarkdown, findInDirectory
+  mdLinks, readFileMarkdown, validateLinkFile, readDirectoryMd,
 };
