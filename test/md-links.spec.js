@@ -1,8 +1,5 @@
-const { mdLinks } = require('../index');
-const { readMdFiles } = require('../index');
+const { mdLinks, readMdFiles, validateLinks, readMdFilesInDirectory } = require('../index');
 const axios = require('axios');
-const { validateLinks } = require('../index');
-const { readMdFilesInDirectory } = require('../index');
 
 jest.mock('axios');
 
@@ -39,6 +36,55 @@ describe('testes da função mdLinks', () => {
       expect(error.message).toBe('O arquivo não contém links.');
     });
   });
+
+  test('deve ler um diretório e subdiretório', () => {
+    return expect(mdLinks('arquivos-md')).resolves.toStrictEqual(
+      [
+        {
+          "file": "C:\\Users\\Janio\\SAP010-md-links\\arquivos-md\\outroslinks.md",
+          "href": "https://nodejs.org/api/path.html",
+          "texto": "Path",
+        },
+        {
+          "file": "C:\\Users\\Janio\\SAP010-md-links\\arquivos-md\\outroslinks.md",
+          "href": "https://www.hostinger.com.br/tutoriais/o-que-e-npm",
+          "texto": "O que é npm",
+        },
+        {
+          "file": "C:\\Users\\Janio\\SAP010-md-links\\arquivos-md\\outroslinks.md",
+          "href": "https://github.com/stevekane/promise-it-wont-hurt",
+          "texto": "promise-it-wont-hurt",
+        },
+        {
+          "file": "C:\\Users\\Janio\\SAP010-md-links\\arquivos-md\\outroslinks.md",
+          "href": "https://github.com/stevekane/promise-it-wont-hurt",
+          "texto": "promise-it-wont-hurt",
+        },
+        {
+          "file": "C:\\Users\\Janio\\SAP010-md-links\\arquivos-md\\mais-arquivos\\teste.md",
+          "href": "https://github.com/markedjs/marked",
+          "texto": "marked",
+        },
+        {
+          "file": "C:\\Users\\Janio\\SAP010-md-links\\arquivos-md\\mais-arquivos\\teste.md",
+          "href": "http://linkquebrado.com",
+          "texto": "ss836ddgu",
+        },
+        {
+          "file": "C:\\Users\\Janio\\SAP010-md-links\\arquivos-md\\mais-arquivos\\teste.md",
+          "href": "http://google.com/badpage",
+          "texto": "badpage",
+        }
+      ]
+    );
+  });
+
+  test('deve dar erro ao ler um diretório sem md', async () => {
+    const nonMdFile = 'dir-sem-md';
+    return mdLinks(nonMdFile).catch(error => {
+      expect(error.message).toBe('Nenhum arquivo md encontrado no diretório');
+    });
+  })
 })
 
 describe('testes da função readMdFiles', () => {
@@ -139,14 +185,11 @@ describe('testes do validateLinks', () => {
 
 describe('testes do readMdFilesInDirectory', () => {
   test('deve retornar uma array de arquivos md', () => {
-    const result = readMdFilesInDirectory('arquivos-md');
-    expect(result).toEqual(
-      [ "arquivos-md\\outroslinks.md", "arquivos-md\\texto.md", "arquivos-md\\mais-arquivos\\teste.md" ]
+    return expect(readMdFilesInDirectory('arquivos-md')).resolves.toStrictEqual(
+      ["arquivos-md\\outroslinks.md",
+        "arquivos-md\\texto.md",
+        "arquivos-md\\mais-arquivos\\teste.md"
+      ]
     );
   });
-
-  test('catch do md files', () => {
-    const result = readMdFilesInDirectory('dir-sem-md');
-    expect(result).toEqual([]);
-  })
 })

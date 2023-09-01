@@ -91,14 +91,12 @@ function readMdFilesInDirectory(dirPath) {
 
 function readLinksInFile(fileContent, filePath, validate) { // função para extrair links
 
-
-
   const regex = /\[([^\[]+)\]\((.*)\)/gim;
 
   const myMatch = fileContent.match(regex);
 
-  if (myMatch === null) {
-    throw new Error('Nenhum link encontrado no arquivo.');
+  if (!myMatch || myMatch.length === 0) {
+    return Promise.resolve([]); // Retorna uma Promise vazia se não houver links
   }
 
   const singleMatch = /\[([^\[]+)\]\((.*)\)/;
@@ -126,11 +124,8 @@ function readLinksInFile(fileContent, filePath, validate) { // função para ext
 function mdLinks(rota, options = { validate: false }) {
   const validate = options.validate;
 
-  return fsPromise.stat(rota)  
+  return fsPromise.stat(rota)
     .then(stats => {
-      if (!stats.isDirectory() && !stats.isFile()) {
-        throw new Error('Arquivo/diretório não encontrado');
-      }
 
       if (stats.isFile()) {
         const fileExtension = path.extname(rota);
@@ -147,29 +142,31 @@ function mdLinks(rota, options = { validate: false }) {
             console.log('mdFiles:', mdFiles);
             const allMdFiles = mdFiles.flat();
             if (allMdFiles.length === 0) {
-              throw new Error('nenhum arquivo md encontrado no dir');
+              throw new Error('Nenhum arquivo md encontrado no diretório');
             }
             return Promise.all(allMdFiles.map(file => {
-             return fsPromise.readFile(file, 'utf-8')
-             .then(fileContent => ({ filePath: file, fileContent }));
+              return fsPromise.readFile(file, 'utf-8')
+                .then(fileContent => ({ filePath: file, fileContent }));
             }));
-          }) 
+          })
           .then(fileContents => {
             console.log('fileContents:', fileContents);
             return Promise.all(fileContents.map(({ filePath, fileContent }) => {
-              const relativePath = path.relative(rota, filePath);
-              console.log('relativePath:', relativePath);
-              return readLinksInFile(fileContent, relativePath, validate);
+              const absolutePath = path.resolve(filePath);
+              console.log('absolutePath:', absolutePath);
+              return readLinksInFile(fileContent, absolutePath, validate);
             }));
           })
           .then(allLinks => {
-            console.log('allLinks:', allLinks);
+            // console.log('allLinks:', allLinks);
             return [].concat(...allLinks);
           });
       }
     })
     .catch(error => {
-      throw error;
+      if (error.code === 'ENOENT') {
+        throw new Error('Arquivo/diretório não encontrado');
+      }
     });
 }
 
