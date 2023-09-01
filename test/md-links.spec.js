@@ -36,7 +36,7 @@ describe('testes da função mdLinks', () => {
   test('deve rejeitar o arquivo se for vazio', async () => {
     const emptyFile = 'emptyfile.md';
     return mdLinks(emptyFile).catch(error => {
-      expect(error.message).toBe('O arquivo está vazio');
+      expect(error.message).toBe('O arquivo não contém links.');
     });
   });
 })
@@ -111,7 +111,7 @@ describe('testes do validateLinks', () => {
 
     const option = { validate: true }
 
-    const result = await mdLinks('teste.md', option);
+    const result = await mdLinks('links.md', option);
 
     expect(result).toHaveLength(3);
     expect(result[0].status).toBe(200);
@@ -129,7 +129,7 @@ describe('testes do validateLinks', () => {
 
     const option = { validate: true }
 
-    const result = await mdLinks('teste.md', option);
+    const result = await mdLinks('links.md', option);
 
     expect(result).toHaveLength(3);
     expect(result[0].status).toBe(404);
@@ -139,9 +139,14 @@ describe('testes do validateLinks', () => {
 
 describe('testes do readMdFilesInDirectory', () => {
   test('deve retornar uma array de arquivos md', () => {
-    const result = readMdFilesInDirectory('arquivos-md', true);
+    const result = readMdFilesInDirectory('arquivos-md');
     expect(result).toEqual(
-      [ 'ignore.js', 'outroslinks.md', 'texto.md' ]
+      [ "arquivos-md\\outroslinks.md", "arquivos-md\\texto.md", "arquivos-md\\mais-arquivos\\teste.md" ]
     );
+  });
+
+  test('catch do md files', () => {
+    const result = readMdFilesInDirectory('dir-sem-md');
+    expect(result).toEqual([]);
   })
 })

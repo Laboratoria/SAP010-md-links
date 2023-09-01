@@ -3,11 +3,11 @@ const fsPromise = require('fs').promises;
 const fs = require('fs');
 const axios = require('axios');
 
-function readMdFiles(rota) {
+function readMdFiles(rota) { // função para ler arquivos md
   return fsPromise.readFile(rota, 'utf-8');
 }
 
-function validateLinks(href) {
+function validateLinks(href) { // função para status e ok da validação
   return axios.head(href)
     .then(response => {
       return {
@@ -24,32 +24,74 @@ function validateLinks(href) {
 }
 
 function readMdFilesInDirectory(dirPath) {
-  try {
-    const dirContent = fs.readdirSync(dirPath);
-    const mdFiles = [];
-    const subDir = [];
+  return fsPromise.readdir(dirPath)
+    .then(dirContent => {
+      const mdFiles = [];
+      const subDir = [];
 
-    dirContent.forEach(item => {
-      const itemPath = path.join(dirPath, item);
-      const itemStats = fs.statSync(itemPath);
+      const promises = dirContent.map(item => {
+        const itemPath = path.join(dirPath, item);
+        return fsPromise.stat(itemPath)
+          .then(itemStats => {
+            if (itemStats.isFile() && ['.md', '.mkd', '.mdwn', '.mdown', '.mdtxt', '.mdtext', '.markdown', '.text'].includes(path.extname(itemPath))) {
+              mdFiles.push(itemPath);
+            } else if (itemStats.isDirectory()) {
+              subDir.push(itemPath);
+            }
+          });
+      });
 
-      if (itemStats.isFile() && ['.md', '.mkd', '.mdwn', '.mdown', '.mdtxt', '.mdtext', '.markdown', '.text'].includes(path.extname(itemPath))) {
-        mdFiles.push(itemPath);
-      } else if (itemStats.isDirectory()) {
-         subDir.push(itemPath);
-      }
+      return Promise.all(promises)
+        .then(() => {
+          const subPromises = subDir.map(subdir => readMdFilesInDirectory(subdir));
+          return Promise.all(subPromises)
+            .then(subMdFilesArrays => {
+              subMdFilesArrays.forEach(subMdFiles => mdFiles.push(...subMdFiles));
+              return mdFiles;
+            });
+        });
     });
-
-    const subMdFiles = subDir.flatMap(subdir => readMdFilesInDirectory(subdir));
-
-    return [...mdFiles, ...subMdFiles];
-  } catch (error) {
-    console.log(error);
-    return [];
-  }
 }
 
-function readLinksInFile(fileContent, filePath, validate) {
+// function readMdFilesInDirectory(dirPath) {
+//   return fsPromise.readdir(dirPath)
+//     .then(dirContent => {
+//       const mdFiles = [];
+//       const subDir = [];
+
+//       const promises = dirContent.map(item => {
+//         const itemPath = path.join(dirPath, item);
+//         return fsPromise.stat(itemPath)
+//           .then(itemStats => {
+//             if (itemStats.isFile() && ['.md', '.mkd', '.mdwn', '.mdown', '.mdtxt', '.mdtext', '.markdown', '.text'].includes(path.extname(itemPath))) {
+//               mdFiles.push(itemPath);
+//             } else if (itemStats.isDirectory()) {
+//               subDir.push(itemPath);
+//             }
+//           });
+//       });
+
+//       return Promise.all(promises)
+//         .then(() => {
+//           console.log('subDir:', subDir);
+//           const subPromises = subDir.map(subdir => readMdFilesInDirectory(subdir));
+//           return Promise.all(subPromises)
+//             .then(subMdFiles => {
+//               console.log('mdFiles:', mdFiles);
+//               return [...mdFiles, ...subMdFiles.flat()]
+//             });
+//         })
+//         .catch(error => {
+//           console.error('Error in Promise.all:', error);
+//           return [];
+//         });
+//     })
+//     .catch(error => error);
+// }
+
+function readLinksInFile(fileContent, filePath, validate) { // função para extrair links
+
+
 
   const regex = /\[([^\[]+)\]\((.*)\)/gim;
 
@@ -83,55 +125,52 @@ function readLinksInFile(fileContent, filePath, validate) {
 
 function mdLinks(rota, options = { validate: false }) {
   const validate = options.validate;
-  return new Promise((resolve, reject) => {
 
-    if (!fs.existsSync(rota)) {
-      reject(new Error('Arquivo/diretório não encontrado'));
-    }
-
-    const stats = fs.statSync(rota);
-
-    if (stats.isFile()) {
-      const fileExtension = path.extname(rota);
-      const mdExtensions = ['.md', '.mkd', '.mdwn', '.mdown', '.mdtxt', '.mdtext', '.markdown', 'text'];
-      if (!mdExtensions.includes(fileExtension)) {
-        reject(new Error('O arquivo não é um arquivo markdown'));
+  return fsPromise.stat(rota)  
+    .then(stats => {
+      if (!stats.isDirectory() && !stats.isFile()) {
+        throw new Error('Arquivo/diretório não encontrado');
       }
 
-      readMdFiles(rota)
-        .then(file => readLinksInFile(file, rota, validate))
-        .then(links => resolve(links))
-        .catch((error) => {
-          if (error.message === 'Nenhum link encontrado no arquivo.') {
-            reject(new Error('O arquivo não contém links.'));
-          }
-        })
-    } else {
-      const mdFiles = readMdFilesInDirectory(rota);
-      const allLinksPromises = mdFiles.map(file => {
-        const filePath = path.join(file);
-        return readMdFiles(filePath)
-          .then(fileContent => readLinksInFile(fileContent, filePath, validate))
-          .catch((error) => {
-            if (error.message === "Nenhum link encontrado no arquivo.") {
-              return [];
-            } else {
-              throw error;
+      if (stats.isFile()) {
+        const fileExtension = path.extname(rota);
+        const mdExtensions = ['.md', '.mkd', '.mdwn', '.mdown', '.mdtxt', '.mdtext', '.markdown', '.text'];
+        if (!mdExtensions.includes(fileExtension)) {
+          throw new Error('O arquivo não é um arquivo markdown');
+        }
+
+        return readMdFiles(rota)
+          .then(file => readLinksInFile(file, rota, validate));
+      } else {
+        return readMdFilesInDirectory(rota)
+          .then(mdFiles => {
+            console.log('mdFiles:', mdFiles);
+            const allMdFiles = mdFiles.flat();
+            if (allMdFiles.length === 0) {
+              throw new Error('nenhum arquivo md encontrado no dir');
             }
+            return Promise.all(allMdFiles.map(file => {
+             return fsPromise.readFile(file, 'utf-8')
+             .then(fileContent => ({ filePath: file, fileContent }));
+            }));
+          }) 
+          .then(fileContents => {
+            console.log('fileContents:', fileContents);
+            return Promise.all(fileContents.map(({ filePath, fileContent }) => {
+              const relativePath = path.relative(rota, filePath);
+              console.log('relativePath:', relativePath);
+              return readLinksInFile(fileContent, relativePath, validate);
+            }));
           })
-      })
-      Promise.all(allLinksPromises)
-        .then((allLinks) => {
-          resolve(allLinks.flat());
-        })
-        .catch((error) => {
-          reject(error);
-        })
-    }
-  })
+          .then(allLinks => {
+            console.log('allLinks:', allLinks);
+            return [].concat(...allLinks);
+          });
+      }
+    })
+    .catch(error => {
+      throw error;
+    });
 }
 
 module.exports = { mdLinks, readMdFiles, validateLinks, readMdFilesInDirectory, readLinksInFile };
-
-// fazer uma função para ler arquivos md e chamar readFilecontent
-// fazer uma função para ler diretórios e talvez chamar readFileContent
